@@ -34,4 +34,16 @@ class SyncFileReader {
     _position += number;
     return list;
   }
+
+  void skip(int count) {
+    _position += count;
+  }
+
+  int getPosition() => _position;
+
+  int readByte([Endian endian = Endian.big]) {
+    final value = _file.byteData.getUint8(_position);
+    _position += 1;
+    return value;
+  }
 }

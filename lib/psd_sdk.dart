@@ -6,5 +6,6 @@ library psd_sdk;
 export 'src/sdk_base.dart';
 export 'src/malloc_allocator.dart';
 export 'src/native_file.dart';
-
-// TODO: Export any libraries intended for clients of this package.
+export 'src/parse_document.dart';
+export 'src/color_mode.dart';
+export 'src/parse_image_resources_section.dart';

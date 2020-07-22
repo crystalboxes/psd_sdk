@@ -34,4 +34,10 @@ class NativeFile extends psd.File {
 
   @override
   ByteData get byteData => _byteData;
+
+  @override
+  int getSize() => _uint8list.length;
+
+  @override
+  void close() {}
 }

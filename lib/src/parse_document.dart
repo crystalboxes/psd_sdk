@@ -14,7 +14,7 @@ Document createDocument(File file, Allocator allocator) {
 
   // check signature, must be "8BPS"
   {
-    final signature = reader.readUint32(Endian.big);
+    final signature = reader.readUint32();
     if (signature != keyValue('8BPS')) {
       psdError([
         'PsdExtract',
@@ -26,7 +26,7 @@ Document createDocument(File file, Allocator allocator) {
 
   // check version, must be 1
   {
-    final version = reader.readUint16(Endian.big);
+    final version = reader.readUint16();
     if (version != 1) {
       psdError([
         'PsdExtract',
@@ -52,6 +52,52 @@ Document createDocument(File file, Allocator allocator) {
   }
 
   final document = Document();
+
+  // read in the number of channels.
+  // this is the number of channels contained in the document for all layers, including any alpha channels.
+  // e.g. for an RGB document with 3 alpha channels, this would be 3 (RGB) + 3 (Alpha) = 6 channels.
+  // however, note that individual layers can have extra channels for transparency masks, vector masks, and user masks.
+  // this is different from layer to layer.
+  document.channelCount = reader.readUint16();
+
+  // read rest of header information
+  document.height = reader.readUint32();
+  document.width = reader.readUint32();
+  document.bitsPerChannel = reader.readUint16();
+  document.colorMode = reader.readUint16();
+
+  // grab offsets into different sections
+  {
+    final length = reader.readUint32();
+
+    document.colorModeDataSection.offset = reader.getPosition();
+    document.colorModeDataSection.length = length;
+
+    reader.skip(length);
+  }
+  {
+    final length = reader.readUint32();
+
+    document.imageResourcesSection.offset = reader.getPosition();
+    document.imageResourcesSection.length = length;
+
+    reader.skip(length);
+  }
+  {
+    final length = reader.readUint32();
+
+    document.layerMaskInfoSection.offset = reader.getPosition();
+    document.layerMaskInfoSection.length = length;
+
+    reader.skip(length);
+  }
+  {
+    // note that the image data section does NOT store its length in the first 4 bytes
+    document.imageDataSection.offset = reader.getPosition();
+    document.imageDataSection.length = file.getSize() - reader.getPosition();
+  }
+
+  return document;
 }
 
 void destroyDocument(Document document, Allocator allocator) {}

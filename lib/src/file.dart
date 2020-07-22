@@ -10,4 +10,7 @@ abstract class File {
   ByteData get byteData;
 
   bool openRead(String filename);
+  void close();
+
+  int getSize();
 }
