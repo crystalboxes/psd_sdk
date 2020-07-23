@@ -106,7 +106,7 @@ void _endianConvert<T extends NumDataType>(
     for (var j = 0; j < size; ++j) {
       var pos = sizeofT * i;
 
-      data[j] = getElemInHostEndian(byteData, pos);
+      data[j] = getElemInHostEndian<T>(byteData, pos);
     }
     images[i].data = copied;
   }

@@ -1,12 +1,11 @@
 import 'dart:typed_data';
 
 import 'package:psd_sdk/psd_sdk.dart';
+import 'tga_exporter.dart' as tga_exporter;
 
 const int CHANNEL_NOT_FOUND = -1;
 
-// ---------------------------------------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------------------------------
-int FindChannel(Layer layer, int channelType) {
+int findChannel(Layer layer, int channelType) {
   for (var i = 0; i < layer.channelCount; ++i) {
     var channel = layer.channels[i];
     if (channel.data != null && channel.type == channelType) {
@@ -17,83 +16,68 @@ int FindChannel(Layer layer, int channelType) {
   return CHANNEL_NOT_FOUND;
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------------------------------
-String GetSampleInputPath() {
-  return '';
+String getSampleInputPath() {
+  return 'example/';
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------------------------------
-String GetSampleOutputPath() {
-  assert(false);
-  return '';
+String getSampleOutputPath() {
+  return 'example/';
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------------------------------
-Uint8List ExpandChannelToCanvas<T extends NumDataType>(Allocator allocator,
+Uint8List expandChannelToCanvas<T extends NumDataType>(Allocator allocator,
     BoundsRect layer, Uint8List data, int canvasWidth, int canvasHeight) {
   var canvasData = Uint8List.fromList(
       List.filled(sizeof<T>() * canvasWidth * canvasHeight, 0));
 
-  CopyLayerData<T>(data, canvasData, layer.left, layer.top, layer.right,
+  copyLayerData<T>(data, canvasData, layer.left, layer.top, layer.right,
       layer.bottom, canvasWidth, canvasHeight);
 
   return canvasData;
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------------------------------
-Uint8List ExpandChannelToCanvas2(
+Uint8List expandChannelToCanvas2(
     Document document, Allocator allocator, BoundsRect layer, Channel channel) {
   if (document.bitsPerChannel == 8) {
-    return ExpandChannelToCanvas<uint8_t>(
+    return expandChannelToCanvas<uint8_t>(
         allocator, layer, channel.data, document.width, document.height);
   } else if (document.bitsPerChannel == 16) {
-    return ExpandChannelToCanvas<uint16_t>(
+    return expandChannelToCanvas<uint16_t>(
         allocator, layer, channel.data, document.width, document.height);
   } else if (document.bitsPerChannel == 32) {
-    return ExpandChannelToCanvas<float32_t>(
+    return expandChannelToCanvas<float32_t>(
         allocator, layer, channel.data, document.width, document.height);
   }
 
   return null;
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------------------------------
-Uint8List ExpandMaskToCanvas(
+Uint8List expandMaskToCanvas(
     Document document, Allocator allocator, Mask mask) {
   if (document.bitsPerChannel == 8) {
-    return ExpandChannelToCanvas<uint8_t>(
+    return expandChannelToCanvas<uint8_t>(
         allocator, mask, mask.data, document.width, document.height);
   } else if (document.bitsPerChannel == 16) {
-    return ExpandChannelToCanvas<uint16_t>(
+    return expandChannelToCanvas<uint16_t>(
         allocator, mask, mask.data, document.width, document.height);
   } else if (document.bitsPerChannel == 32) {
-    return ExpandChannelToCanvas<float32_t>(
+    return expandChannelToCanvas<float32_t>(
         allocator, mask, mask.data, document.width, document.height);
   }
 
   return null;
 }
 
-Uint8List CreateInterleavedImage<T extends NumDataType>(Allocator allocator,
+Uint8List createInterleavedImage<T extends NumDataType>(Allocator allocator,
     Uint8List srcR, Uint8List srcG, Uint8List srcB, int width, int height) {
-  var image = Uint8List(width * height * 4 * sizeof<T>());
-
   final r = (srcR);
   final g = (srcG);
   final b = (srcB);
-  InterleaveRGB(r, g, b, null, image, width, height);
+  var image = interleaveRGB<T>(r, g, b, 0, width, height);
 
   return image;
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------------------------------
-Uint8List CreateInterleavedImageRGBA<T extends NumDataType>(
+Uint8List createInterleavedImageRGBA<T extends NumDataType>(
     Allocator allocator,
     Uint8List srcR,
     Uint8List srcG,
@@ -101,19 +85,17 @@ Uint8List CreateInterleavedImageRGBA<T extends NumDataType>(
     Uint8List srcA,
     int width,
     int height) {
-  var image = Uint8List(width * height * 4 * sizeof<T>());
-
   final r = (srcR);
   final g = (srcG);
   final b = (srcB);
   final a = (srcA);
-  InterleaveRGBA(r, g, b, a, image, width, height);
+  var image = interleaveRGBA<T>(r, g, b, a, width, height);
 
   return image;
 }
 
 int sampleReadPsd() {
-  final srcPath = 'example/Sample.psd';
+  final srcPath = '${getSampleInputPath()}Sample.psd';
 
   var allocator = MallocAllocator();
   var file = NativeFile(allocator);
@@ -165,10 +147,10 @@ int sampleReadPsd() {
       // we need to determine the indices of channels individually, because
       // there is no guarantee that R is the first channel, G is the second, B
       // is the third, and so on.
-      final indexR = FindChannel(layer, ChannelType.R);
-      final indexG = FindChannel(layer, ChannelType.G);
-      final indexB = FindChannel(layer, ChannelType.B);
-      final indexA = FindChannel(layer, ChannelType.TRANSPARENCY_MASK);
+      final indexR = findChannel(layer, ChannelType.R);
+      final indexG = findChannel(layer, ChannelType.G);
+      final indexB = findChannel(layer, ChannelType.B);
+      final indexA = findChannel(layer, ChannelType.TRANSPARENCY_MASK);
 
       // note that channel data is only as big as the layer it belongs to, e.g.
       // it can be smaller or bigger than the canvas, depending on where it is
@@ -181,17 +163,17 @@ int sampleReadPsd() {
           (indexG != CHANNEL_NOT_FOUND) &&
           (indexB != CHANNEL_NOT_FOUND)) {
         // RGB channels were found.
-        canvasData[0] = ExpandChannelToCanvas2(
+        canvasData[0] = expandChannelToCanvas2(
             document, allocator, layer, layer.channels[indexR]);
-        canvasData[1] = ExpandChannelToCanvas2(
+        canvasData[1] = expandChannelToCanvas2(
             document, allocator, layer, layer.channels[indexG]);
-        canvasData[2] = ExpandChannelToCanvas2(
+        canvasData[2] = expandChannelToCanvas2(
             document, allocator, layer, layer.channels[indexB]);
         channelCount = 3;
 
         if (indexA != CHANNEL_NOT_FOUND) {
           // A channel was also found.
-          canvasData[3] = ExpandChannelToCanvas2(
+          canvasData[3] = expandChannelToCanvas2(
               document, allocator, layer, layer.channels[indexA]);
           channelCount = 4;
         }
@@ -203,18 +185,18 @@ int sampleReadPsd() {
       Uint8List image8, image16, image32;
       if (channelCount == 3) {
         if (document.bitsPerChannel == 8) {
-          image8 = CreateInterleavedImage<uint8_t>(allocator, canvasData[0],
+          image8 = createInterleavedImage<uint8_t>(allocator, canvasData[0],
               canvasData[1], canvasData[2], document.width, document.height);
         } else if (document.bitsPerChannel == 16) {
-          image16 = CreateInterleavedImage<uint16_t>(allocator, canvasData[0],
+          image16 = createInterleavedImage<uint16_t>(allocator, canvasData[0],
               canvasData[1], canvasData[2], document.width, document.height);
         } else if (document.bitsPerChannel == 32) {
-          image32 = CreateInterleavedImage<float32_t>(allocator, canvasData[0],
+          image32 = createInterleavedImage<float32_t>(allocator, canvasData[0],
               canvasData[1], canvasData[2], document.width, document.height);
         }
       } else if (channelCount == 4) {
         if (document.bitsPerChannel == 8) {
-          image8 = CreateInterleavedImageRGBA<uint8_t>(
+          image8 = createInterleavedImageRGBA<uint8_t>(
               allocator,
               canvasData[0],
               canvasData[1],
@@ -223,7 +205,7 @@ int sampleReadPsd() {
               document.width,
               document.height);
         } else if (document.bitsPerChannel == 16) {
-          image16 = CreateInterleavedImageRGBA<uint16_t>(
+          image16 = createInterleavedImageRGBA<uint16_t>(
               allocator,
               canvasData[0],
               canvasData[1],
@@ -232,7 +214,7 @@ int sampleReadPsd() {
               document.width,
               document.height);
         } else if (document.bitsPerChannel == 32) {
-          image32 = CreateInterleavedImageRGBA<float32_t>(
+          image32 = createInterleavedImageRGBA<float32_t>(
               allocator,
               canvasData[0],
               canvasData[1],
@@ -254,8 +236,8 @@ int sampleReadPsd() {
       // Unicode name was found.
       String layerName;
       if (layer.utf16Name != null) {
-        // TODO
-        // layerName << reinterpret_cast<wchar_t *>(layer.utf16Name);
+        layerName =
+            String.fromCharCodes(layer.utf16Name.where((x) => x != 0x00));
       } else {
         layerName = layer.name;
       }
@@ -267,17 +249,15 @@ int sampleReadPsd() {
       // we simply write the image to a .TGA file.
       if (channelCount == 3) {
         if (document.bitsPerChannel == 8) {
-          var filename = '${GetSampleOutputPath()}layer${layerName}.tga';
-          // TODO
-          // tgaExporter::SaveRGB(filename.str().c_str(), document.width,
-          //                      document.height, image8);
+          var filename = '${getSampleOutputPath()}' 'layer${layerName}.tga';
+          tga_exporter.saveRGB(
+              filename, document.width, document.height, image8);
         }
       } else if (channelCount == 4) {
         if (document.bitsPerChannel == 8) {
-          var filename = '${GetSampleOutputPath()}layer${layerName}.tga';
-          // TODO
-          // tgaExporter::SaveRGBA(filename.str().c_str(), document.width,
-          //                       document.height, image8);
+          var filename = '${getSampleOutputPath()}' 'layer${layerName}.tga';
+          tga_exporter.saveRGBA(
+              filename, document.width, document.height, image8);
         }
       }
 
@@ -297,26 +277,22 @@ int sampleReadPsd() {
         // similar to layer data, the mask data can be smaller or bigger than
         // the canvas. the mask data is always single-channel (monochrome), and
         // has a width and height as calculated above.
-        Uint8List maskData = layer.layerMask.data;
+        var maskData = layer.layerMask.data;
         {
           var filename =
-              '${GetSampleOutputPath()}layer${layerName}_usermask.tga';
-          // TODO
-          // tgaExporter::SaveMonochrome(filename.str().c_str(), width, height,
-          //                             static_cast<const uint8_t *>(maskData));
+              '${getSampleOutputPath()}' 'layer${layerName}' '_usermask.tga';
+          tga_exporter.saveMonochrome(filename, width, height, maskData);
         }
 
         // use ExpandMaskToCanvas create an image that is the same size as the
         // canvas.
         Uint8List maskCanvasData =
-            ExpandMaskToCanvas(document, allocator, layer.layerMask);
+            expandMaskToCanvas(document, allocator, layer.layerMask);
         {
           var filename =
-              '${GetSampleOutputPath()}canvas${layerName}_usermask.tga';
-          // TODO
-          // tgaExporter::SaveMonochrome(
-          //     filename.str().c_str(), document.width, document.height,
-          //     static_cast<const uint8_t *>(maskCanvasData));
+              '${getSampleOutputPath()}canvas${layerName}_usermask.tga';
+          tga_exporter.saveMonochrome(
+              filename, document.width, document.height, maskCanvasData);
         }
 
         allocator.free(maskCanvasData);
@@ -328,24 +304,20 @@ int sampleReadPsd() {
         final width = (layer.vectorMask.right - layer.vectorMask.left);
         final height = (layer.vectorMask.bottom - layer.vectorMask.top);
 
-        Uint8List maskData = layer.vectorMask.data;
+        var maskData = layer.vectorMask.data;
         {
           var filename =
-              '${GetSampleOutputPath()}layer${layerName}_vectormask.tga';
-          // TODO
-          // tgaExporter::SaveMonochrome(filename.str().c_str(), width, height,
-          //                             static_cast<const uint8_t *>(maskData));
+              '${getSampleOutputPath()}' 'layer${layerName}' '_vectormask.tga';
+          tga_exporter.saveMonochrome(filename, width, height, maskData);
         }
 
-        Uint8List maskCanvasData =
-            ExpandMaskToCanvas(document, allocator, layer.vectorMask);
+        var maskCanvasData =
+            expandMaskToCanvas(document, allocator, layer.vectorMask);
         {
           var filename =
-              '${GetSampleOutputPath()}canvas${layerName}_vectormask.tga';
-          // TODO
-          // tgaExporter::SaveMonochrome(
-          //     filename.str().c_str(), document.width, document.height,
-          //     static_cast<const uint8_t *>(maskCanvasData));
+              '${getSampleOutputPath()}' 'canvas${layerName}' '_vectormask.tga';
+          tga_exporter.saveMonochrome(
+              filename, document.width, document.height, maskCanvasData);
         }
 
         allocator.free(maskCanvasData);
@@ -393,7 +365,7 @@ int sampleReadPsd() {
         if (isRgb) {
           // RGB
           if (document.bitsPerChannel == 8) {
-            image8 = CreateInterleavedImage<uint8_t>(
+            image8 = createInterleavedImage<uint8_t>(
                 allocator,
                 imageData.images[0].data,
                 imageData.images[1].data,
@@ -401,7 +373,7 @@ int sampleReadPsd() {
                 document.width,
                 document.height);
           } else if (document.bitsPerChannel == 16) {
-            image16 = CreateInterleavedImage<uint16_t>(
+            image16 = createInterleavedImage<uint16_t>(
                 allocator,
                 imageData.images[0].data,
                 imageData.images[1].data,
@@ -409,7 +381,7 @@ int sampleReadPsd() {
                 document.width,
                 document.height);
           } else if (document.bitsPerChannel == 32) {
-            image32 = CreateInterleavedImage<float32_t>(
+            image32 = createInterleavedImage<float32_t>(
                 allocator,
                 imageData.images[0].data,
                 imageData.images[1].data,
@@ -420,7 +392,7 @@ int sampleReadPsd() {
         } else {
           // RGBA
           if (document.bitsPerChannel == 8) {
-            image8 = CreateInterleavedImageRGBA<uint8_t>(
+            image8 = createInterleavedImageRGBA<uint8_t>(
                 allocator,
                 imageData.images[0].data,
                 imageData.images[1].data,
@@ -429,7 +401,7 @@ int sampleReadPsd() {
                 document.width,
                 document.height);
           } else if (document.bitsPerChannel == 16) {
-            image16 = CreateInterleavedImageRGBA<uint16_t>(
+            image16 = createInterleavedImageRGBA<uint16_t>(
                 allocator,
                 imageData.images[0].data,
                 imageData.images[1].data,
@@ -438,7 +410,7 @@ int sampleReadPsd() {
                 document.width,
                 document.height);
           } else if (document.bitsPerChannel == 32) {
-            image32 = CreateInterleavedImageRGBA<float32_t>(
+            image32 = createInterleavedImageRGBA<float32_t>(
                 allocator,
                 imageData.images[0].data,
                 imageData.images[1].data,
@@ -450,15 +422,14 @@ int sampleReadPsd() {
         }
 
         if (document.bitsPerChannel == 8) {
-          var filename = '${GetSampleOutputPath()}merged.tga';
-          // TODO
-          // if (isRgb) {
-          //   tgaExporter::SaveRGB(filename.str().c_str(), document.width,
-          //                        document.height, image8);
-          // } else {
-          //   tgaExporter::SaveRGBA(filename.str().c_str(), document.width,
-          //                         document.height, image8);
-          // }
+          var filename = '${getSampleOutputPath()}' 'merged.tga';
+          if (isRgb) {
+            tga_exporter.saveRGB(
+                filename, document.width, document.height, image8);
+          } else {
+            tga_exporter.saveRGBA(
+                filename, document.width, document.height, image8);
+          }
         }
 
         allocator.free(image8);
@@ -480,13 +451,11 @@ int sampleReadPsd() {
             var channel = imageResources.alphaChannels[i];
 
             if (document.bitsPerChannel == 8) {
-              var filename =
-                  '${GetSampleOutputPath()}.extra_channel_${channel.asciiName}.tga';
-              // TODO
-              // tgaExporter::SaveMonochrome(
-              //     filename.str().c_str(), document.width, document.height,
-              //     static_cast<const uint8_t *>(
-              //         imageData.images[i + skipImageCount].data));
+              var filename = '${getSampleOutputPath()}'
+                  '.extra_channel_'
+                  '${channel.asciiName}.tga';
+              tga_exporter.saveMonochrome(filename, document.width,
+                  document.height, imageData.images[i + skipImageCount].data);
             }
           }
 
@@ -504,6 +473,6 @@ int sampleReadPsd() {
   return 0;
 }
 
-void main() {
+main() {
   sampleReadPsd();
 }

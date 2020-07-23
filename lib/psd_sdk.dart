@@ -3,7 +3,6 @@
 /// More dartdocs go here.
 library psd_sdk;
 
-export 'src/sdk_base.dart';
 export 'src/malloc_allocator.dart';
 export 'src/native_file.dart';
 export 'src/parse_document.dart';

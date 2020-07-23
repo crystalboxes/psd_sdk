@@ -90,7 +90,7 @@ bool IsSameRegion(int layerLeft, int layerTop, int layerRight, int layerBottom,
 
 // ---------------------------------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------------------------
-void CopyLayerData<T extends NumDataType>(
+void copyLayerData<T extends NumDataType>(
     Uint8List layerData,
     Uint8List canvasData,
     int layerLeft,

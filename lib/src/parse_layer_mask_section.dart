@@ -251,7 +251,8 @@ LayerMaskSection parseLayer(
       final nameLength = reader.readByte();
       final paddedNameLength = roundUpToMultiple(nameLength + 1, 4);
 
-      layer.name = String.fromCharCodes(reader.readBytes(paddedNameLength - 1));
+      layer.name = String.fromCharCodes(
+          reader.readBytes(paddedNameLength - 1).where((x) => x != 0x00));
 
       // read Additional Layer Information that exists since Photoshop 4.0.
       // getting the size of this data is a bit awkward, because it's not stored explicitly somewhere. furthermore,
@@ -503,7 +504,7 @@ Uint8List endianConvert<T extends NumDataType>(Uint8List src, width, height) {
 
   for (var i = 0; i < size; ++i) {
     var pos = sizeofT * i;
-    data[i] = getElemInHostEndian(byteData, pos);
+    data[i] = getElemInHostEndian<T>(byteData, pos);
   }
   return copied;
 }
