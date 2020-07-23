@@ -2,6 +2,7 @@ import 'package:psd_sdk/src/key.dart';
 import 'package:psd_sdk/src/log.dart';
 
 import 'allocator.dart';
+import 'alpha_channel.dart';
 import 'bit_util.dart';
 import 'document.dart';
 import 'file.dart';
@@ -80,6 +81,7 @@ ImageResourcesSection parseImageResourcesSection(
           final version = reader.readUint32();
 
           for (var i = 0; i < imageResources.alphaChannelCount; ++i) {
+            imageResources.alphaChannels[0] = AlphaChannel();
             var channel = imageResources.alphaChannels[0];
             channel.colorSpace = reader.readUint16();
             channel.color[0] = reader.readUint16();
@@ -171,7 +173,7 @@ ImageResourcesSection parseImageResourcesSection(
       case ImageResource.XMP_METADATA:
         {
           // load the XMP metadata as raw data
-          assert(imageResources.xmpMetadata != null,
+          assert(imageResources.xmpMetadata == null,
               'File contains more than one XMP metadata resource.');
           final xmpMetadata = reader.readBytes(resourceSize);
           imageResources.xmpMetadata = String.fromCharCodes(xmpMetadata);
@@ -181,7 +183,7 @@ ImageResourcesSection parseImageResourcesSection(
       case ImageResource.ICC_PROFILE:
         {
           // load the ICC profile as raw data
-          assert(imageResources.iccProfile != null,
+          assert(imageResources.iccProfile == null,
               'File contains more than one ICC profile.');
           imageResources.sizeOfICCProfile = resourceSize;
           imageResources.iccProfile = reader.readBytes(resourceSize);
@@ -191,7 +193,7 @@ ImageResourcesSection parseImageResourcesSection(
       case ImageResource.EXIF_DATA:
         {
           // load the EXIF data as raw data
-          assert(imageResources.exifData != null,
+          assert(imageResources.exifData == null,
               'File contains more than one EXIF data block.');
           imageResources.sizeOfExifData = resourceSize;
           imageResources.exifData = reader.readBytes(resourceSize);
@@ -206,6 +208,9 @@ ImageResourcesSection parseImageResourcesSection(
             // note that this assumes RGB mode
             final channelCount = document.channelCount - 3;
             imageResources.alphaChannels = List(channelCount);
+            for (var x = 0; x < imageResources.alphaChannelCount; x++) {
+              imageResources.alphaChannels[x] = AlphaChannel();
+            }
           }
 
           // the names of the alpha channels are stored as a series of Pascal strings

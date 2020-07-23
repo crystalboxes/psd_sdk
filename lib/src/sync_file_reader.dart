@@ -3,7 +3,10 @@ import 'dart:typed_data';
 import 'file.dart';
 
 const _uint16Size = 2;
+const _int16Size = 2;
 const _uint32Size = 4;
+const _int32Size = 4;
+const _float64Size = 8;
 
 class SyncFileReader {
   SyncFileReader(File file)
@@ -44,6 +47,24 @@ class SyncFileReader {
   int readByte([Endian endian = Endian.big]) {
     final value = _file.byteData.getUint8(_position);
     _position += 1;
+    return value;
+  }
+
+  int readInt16([Endian endian = Endian.big]) {
+    final value = _file.byteData.getInt16(_position);
+    _position += _int16Size;
+    return value;
+  }
+
+  int readInt32([Endian endian = Endian.big]) {
+    final value = _file.byteData.getInt32(_position);
+    _position += _int32Size;
+    return value;
+  }
+
+  double readFloat64() {
+    final value = _file.byteData.getFloat64(_position);
+    _position += _float64Size;
     return value;
   }
 }
