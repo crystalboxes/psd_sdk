@@ -167,7 +167,7 @@ LayerMaskSection parseLayer(
       //								the parameters follow after that. there is also padding at the end of this second section.
       if (layerMaskDataLength != 0) {
         // there can be at most two masks, one layer and one vector mask
-        final maskData = List<MaskData>(2);
+        final maskData = <MaskData>[MaskData(), MaskData()];
         var maskCount = 1;
 
         var layerFeather = Ref(0.0);
