@@ -97,8 +97,8 @@ Uint8List createInterleavedImageRGBA<T extends NumDataType>(
 int sampleReadPsd() {
   final srcPath = '${getSampleInputPath()}Sample.psd';
 
-  var allocator = MallocAllocator();
-  var file = NativeFile(allocator);
+  var allocator = mallocAllocator();
+  var file = nativeFile(allocator);
 
   if (!file.openRead(srcPath)) {
     print('Cannot open file.');
@@ -488,11 +488,11 @@ final g_orData16 = Uint16List(IMAGE_HEIGHT * IMAGE_WIDTH);
 final g_andData16 = Uint16List(IMAGE_HEIGHT * IMAGE_WIDTH);
 final g_checkerBoardData16 = Uint16List(IMAGE_HEIGHT * IMAGE_WIDTH);
 
-final g_multiplyData32 = Float32List(IMAGE_WIDTH);
-final g_xorData32 = Float32List(IMAGE_WIDTH);
-final g_orData32 = Float32List(IMAGE_WIDTH);
-final g_andData32 = Float32List(IMAGE_WIDTH);
-final g_checkerBoardData32 = Float32List(IMAGE_WIDTH);
+final g_multiplyData32 = Float32List(IMAGE_WIDTH * IMAGE_HEIGHT);
+final g_xorData32 = Float32List(IMAGE_WIDTH * IMAGE_HEIGHT);
+final g_orData32 = Float32List(IMAGE_WIDTH * IMAGE_HEIGHT);
+final g_andData32 = Float32List(IMAGE_WIDTH * IMAGE_HEIGHT);
+final g_checkerBoardData32 = Float32List(IMAGE_WIDTH * IMAGE_HEIGHT);
 
 // ---------------------------------------------------------------------------------------------------------------------
 void GenerateImageData() {
@@ -524,14 +524,14 @@ void GenerateImageData() {
 
 // ---------------------------------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------------------------
-int SampleWritePsd() {
+int sampleWritePsd() {
   GenerateImageData();
 
   {
     final dstPath = '${getSampleOutputPath()}SampleWrite_8.psd';
 
-    var allocator = MallocAllocator();
-    var file = NativeFile(allocator);
+    var allocator = mallocAllocator();
+    var file = nativeFile(allocator);
 
     // try opening the file. if it fails, bail out.
     // if (!file.OpenWrite(dstPath.c_str())) {
@@ -540,23 +540,23 @@ int SampleWritePsd() {
     // }
 
     // write an RGB PSD file, 8-bit
-    var document = CreateExportDocument(
+    var document = createExportDocument(
         allocator, IMAGE_WIDTH, IMAGE_HEIGHT, 8, ExportColorMode.RGB);
     {
       // metadata can be added as simple key-value pairs.
       // when loading the document, they will be contained in XMP metadata such
       // as e.g. <xmp:MyAttribute>MyValue</xmp:MyAttribute>
-      AddMetaData(document, allocator, 'MyAttribute', 'MyValue');
+      addMetaData(document, allocator, 'MyAttribute', 'MyValue');
 
       // when adding a layer to the document, you first need to get a new index
       // into the layer table. with a valid index, layers can be updated in
       // parallel, in any order. this also allows you to only update the layer
       // data that has changed, which is crucial when working with large data
       // sets.
-      final layer1 = AddLayer(document, allocator, 'MUL pattern');
-      final layer2 = AddLayer(document, allocator, 'XOR pattern');
+      final layer1 = addLayer(document, allocator, 'MUL pattern');
+      final layer2 = addLayer(document, allocator, 'XOR pattern');
       final layer3 =
-          AddLayer(document, allocator, 'Mixed pattern with transparency');
+          addLayer(document, allocator, 'Mixed pattern with transparency');
 
       // note that each layer has its own compression type. it is perfectly
       // legal to compress different channels of different layers with different
@@ -566,35 +566,35 @@ int SampleWritePsd() {
       // good compromise between speed and size. ZIP_WITH_PREDICTION first delta
       // encodes the data, and then zips it. slowest to write, but also smallest
       // in size for most images.
-      UpdateLayer(document, allocator, layer1, ExportChannel.RED, 0, 0,
+      updateLayer(document, allocator, layer1, ExportChannel.RED, 0, 0,
           IMAGE_WIDTH, IMAGE_HEIGHT, g_multiplyData, CompressionType.RAW);
-      UpdateLayer(document, allocator, layer1, ExportChannel.GREEN, 0, 0,
+      updateLayer(document, allocator, layer1, ExportChannel.GREEN, 0, 0,
           IMAGE_WIDTH, IMAGE_HEIGHT, g_multiplyData, CompressionType.RAW);
-      UpdateLayer(document, allocator, layer1, ExportChannel.BLUE, 0, 0,
+      updateLayer(document, allocator, layer1, ExportChannel.BLUE, 0, 0,
           IMAGE_WIDTH, IMAGE_HEIGHT, g_multiplyData, CompressionType.RAW);
 
-      UpdateLayer(document, allocator, layer2, ExportChannel.RED, 0, 0,
+      updateLayer(document, allocator, layer2, ExportChannel.RED, 0, 0,
           IMAGE_WIDTH, IMAGE_HEIGHT, g_xorData, CompressionType.RAW);
-      UpdateLayer(document, allocator, layer2, ExportChannel.GREEN, 0, 0,
+      updateLayer(document, allocator, layer2, ExportChannel.GREEN, 0, 0,
           IMAGE_WIDTH, IMAGE_HEIGHT, g_xorData, CompressionType.RAW);
-      UpdateLayer(document, allocator, layer2, ExportChannel.BLUE, 0, 0,
+      updateLayer(document, allocator, layer2, ExportChannel.BLUE, 0, 0,
           IMAGE_WIDTH, IMAGE_HEIGHT, g_xorData, CompressionType.RAW);
 
-      UpdateLayer(document, allocator, layer3, ExportChannel.RED, 0, 0,
+      updateLayer(document, allocator, layer3, ExportChannel.RED, 0, 0,
           IMAGE_WIDTH, IMAGE_HEIGHT, g_multiplyData, CompressionType.RAW);
-      UpdateLayer(document, allocator, layer3, ExportChannel.GREEN, 0, 0,
+      updateLayer(document, allocator, layer3, ExportChannel.GREEN, 0, 0,
           IMAGE_WIDTH, IMAGE_HEIGHT, g_xorData, CompressionType.RAW);
-      UpdateLayer(document, allocator, layer3, ExportChannel.BLUE, 0, 0,
+      updateLayer(document, allocator, layer3, ExportChannel.BLUE, 0, 0,
           IMAGE_WIDTH, IMAGE_HEIGHT, g_orData, CompressionType.RAW);
 
       // note that transparency information is always supported, regardless of
       // the export color mode. it is saved as true transparency, and not as
       // separate alpha channel.
-      UpdateLayer(document, allocator, layer1, ExportChannel.ALPHA, 0, 0,
+      updateLayer(document, allocator, layer1, ExportChannel.ALPHA, 0, 0,
           IMAGE_WIDTH, IMAGE_HEIGHT, g_multiplyData, CompressionType.RAW);
-      UpdateLayer(document, allocator, layer2, ExportChannel.ALPHA, 0, 0,
+      updateLayer(document, allocator, layer2, ExportChannel.ALPHA, 0, 0,
           IMAGE_WIDTH, IMAGE_HEIGHT, g_xorData, CompressionType.RAW);
-      UpdateLayer(document, allocator, layer3, ExportChannel.ALPHA, 0, 0,
+      updateLayer(document, allocator, layer3, ExportChannel.ALPHA, 0, 0,
           IMAGE_WIDTH, IMAGE_HEIGHT, g_orData, CompressionType.RAW);
 
       // merged image data is optional. if none is provided, black channels will
@@ -607,27 +607,27 @@ int SampleWritePsd() {
       // updated in parallel, in any order. add four spot colors (red, green,
       // blue, and a mix) as additional channels.
       {
-        final spotIndex = AddAlphaChannel(document, allocator, 'Spot Red',
+        final spotIndex = addAlphaChannel(document, allocator, 'Spot Red',
             65535, 0, 0, 0, 100, AlphaChannelMode.SPOT);
-        UpdateChannel(document, allocator, spotIndex, g_multiplyData);
+        updateChannel(document, allocator, spotIndex, g_multiplyData);
       }
       {
-        final spotIndex = AddAlphaChannel(document, allocator, 'Spot Green', 0,
+        final spotIndex = addAlphaChannel(document, allocator, 'Spot Green', 0,
             65535, 0, 0, 75, AlphaChannelMode.SPOT);
-        UpdateChannel(document, allocator, spotIndex, g_xorData);
+        updateChannel(document, allocator, spotIndex, g_xorData);
       }
       {
-        final spotIndex = AddAlphaChannel(document, allocator, 'Spot Blue', 0,
+        final spotIndex = addAlphaChannel(document, allocator, 'Spot Blue', 0,
             0, 65535, 0, 50, AlphaChannelMode.SPOT);
-        UpdateChannel(document, allocator, spotIndex, g_orData);
+        updateChannel(document, allocator, spotIndex, g_orData);
       }
       {
-        final spotIndex = AddAlphaChannel(document, allocator, 'Mix', 20000,
+        final spotIndex = addAlphaChannel(document, allocator, 'Mix', 20000,
             50000, 30000, 0, 100, AlphaChannelMode.SPOT);
-        UpdateChannel(document, allocator, spotIndex, g_orData);
+        updateChannel(document, allocator, spotIndex, g_orData);
       }
 
-      WriteDocument(document, allocator, file);
+      writeDocument(document, allocator, file);
     }
 
     file.close();
@@ -635,8 +635,8 @@ int SampleWritePsd() {
   {
     final dstPath = '${getSampleOutputPath()}SampleWrite_16.psd';
 
-    var allocator = MallocAllocator();
-    var file = NativeFile(allocator);
+    var allocator = mallocAllocator();
+    var file = nativeFile(allocator);
 
     // // try opening the file. if it fails, bail out.
     // if (!file.OpenWrite(dstPath.c_str())) {
@@ -646,24 +646,24 @@ int SampleWritePsd() {
 
     // write a Grayscale PSD file, 16-bit.
     // Grayscale works similar to RGB, only the types of export channels change.
-    final document = CreateExportDocument(
+    final document = createExportDocument(
         allocator, IMAGE_WIDTH, IMAGE_HEIGHT, 16, ExportColorMode.GRAYSCALE);
     {
-      final layer1 = AddLayer(document, allocator, 'MUL pattern');
-      UpdateLayer(document, allocator, layer1, ExportChannel.GRAY, 0, 0,
+      final layer1 = addLayer(document, allocator, 'MUL pattern');
+      updateLayer(document, allocator, layer1, ExportChannel.GRAY, 0, 0,
           IMAGE_WIDTH, IMAGE_HEIGHT, g_multiplyData16, CompressionType.RAW);
 
-      final layer2 = AddLayer(document, allocator, 'XOR pattern');
-      UpdateLayer(document, allocator, layer2, ExportChannel.GRAY, 0, 0,
+      final layer2 = addLayer(document, allocator, 'XOR pattern');
+      updateLayer(document, allocator, layer2, ExportChannel.GRAY, 0, 0,
           IMAGE_WIDTH, IMAGE_HEIGHT, g_xorData16, CompressionType.RLE);
 
-      final layer3 = AddLayer(document, allocator, 'AND pattern');
-      UpdateLayer(document, allocator, layer3, ExportChannel.GRAY, 0, 0,
+      final layer3 = addLayer(document, allocator, 'AND pattern');
+      updateLayer(document, allocator, layer3, ExportChannel.GRAY, 0, 0,
           IMAGE_WIDTH, IMAGE_HEIGHT, g_andData16, CompressionType.ZIP);
 
       final layer4 =
-          AddLayer(document, allocator, 'OR pattern with transparency');
-      UpdateLayer(
+          addLayer(document, allocator, 'OR pattern with transparency');
+      updateLayer(
           document,
           allocator,
           layer4,
@@ -674,7 +674,7 @@ int SampleWritePsd() {
           IMAGE_HEIGHT,
           g_orData16,
           CompressionType.ZIP_WITH_PREDICTION);
-      UpdateLayer(
+      updateLayer(
           document,
           allocator,
           layer4,
@@ -689,7 +689,7 @@ int SampleWritePsd() {
       updateMergedImage(
           document, allocator, g_multiplyData16, g_xorData16, g_andData16);
 
-      WriteDocument(document, allocator, file);
+      writeDocument(document, allocator, file);
     }
 
     file.close();
@@ -697,8 +697,8 @@ int SampleWritePsd() {
   {
     final dstPath = 'GetSampleOutputPath()SampleWrite_32.psd';
 
-    var allocator = MallocAllocator();
-    var file = NativeFile(allocator);
+    var allocator = mallocAllocator();
+    var file = nativeFile(allocator);
 
     // try opening the file. if it fails, bail out.
     // if (!file.OpenWrite(dstPath.c_str())) {
@@ -707,24 +707,24 @@ int SampleWritePsd() {
     // }
 
     // write an RGB PSD file, 32-bit
-    var document = CreateExportDocument(
+    var document = createExportDocument(
         allocator, IMAGE_WIDTH, IMAGE_HEIGHT, 32, ExportColorMode.RGB);
     {
-      final layer1 = AddLayer(document, allocator, 'MUL pattern');
-      UpdateLayer(document, allocator, layer1, ExportChannel.RED, 0, 0,
+      final layer1 = addLayer(document, allocator, 'MUL pattern');
+      updateLayer(document, allocator, layer1, ExportChannel.RED, 0, 0,
           IMAGE_WIDTH, IMAGE_HEIGHT, g_multiplyData32, CompressionType.RAW);
-      UpdateLayer(document, allocator, layer1, ExportChannel.GREEN, 0, 0,
+      updateLayer(document, allocator, layer1, ExportChannel.GREEN, 0, 0,
           IMAGE_WIDTH, IMAGE_HEIGHT, g_multiplyData32, CompressionType.RLE);
-      UpdateLayer(document, allocator, layer1, ExportChannel.BLUE, 0, 0,
+      updateLayer(document, allocator, layer1, ExportChannel.BLUE, 0, 0,
           IMAGE_WIDTH, IMAGE_HEIGHT, g_multiplyData32, CompressionType.ZIP);
 
       final layer2 =
-          AddLayer(document, allocator, 'Mixed pattern with transparency');
-      UpdateLayer(document, allocator, layer2, ExportChannel.RED, 0, 0,
+          addLayer(document, allocator, 'Mixed pattern with transparency');
+      updateLayer(document, allocator, layer2, ExportChannel.RED, 0, 0,
           IMAGE_WIDTH, IMAGE_HEIGHT, g_multiplyData32, CompressionType.RLE);
-      UpdateLayer(document, allocator, layer2, ExportChannel.GREEN, 0, 0,
+      updateLayer(document, allocator, layer2, ExportChannel.GREEN, 0, 0,
           IMAGE_WIDTH, IMAGE_HEIGHT, g_xorData32, CompressionType.ZIP);
-      UpdateLayer(
+      updateLayer(
           document,
           allocator,
           layer2,
@@ -735,13 +735,13 @@ int SampleWritePsd() {
           IMAGE_HEIGHT,
           g_orData32,
           CompressionType.ZIP_WITH_PREDICTION);
-      UpdateLayer(document, allocator, layer2, ExportChannel.ALPHA, 0, 0,
+      updateLayer(document, allocator, layer2, ExportChannel.ALPHA, 0, 0,
           IMAGE_WIDTH, IMAGE_HEIGHT, g_checkerBoardData32, CompressionType.RAW);
 
       updateMergedImage(document, allocator, g_multiplyData32, g_xorData32,
           g_checkerBoardData32);
 
-      WriteDocument(document, allocator, file);
+      writeDocument(document, allocator, file);
     }
 
     file.close();
@@ -750,8 +750,7 @@ int SampleWritePsd() {
   return 0;
 }
 
-
-
-main() {
-  sampleReadPsd();
+void main() {
+  // sampleReadPsd();
+  sampleWritePsd();
 }

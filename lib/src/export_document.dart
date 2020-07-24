@@ -23,11 +23,11 @@ class ExportDocument {
   List<ExportLayer> layers;
   int get layerCount => layers.length;
 
-  List<Uint8List> mergedImageData;
+  List<Uint8List> mergedImageData = List(3);
 
   List<AlphaChannel> alphaChannels = List(MAX_ALPHA_CHANNEL_COUNT);
   int get alphaChannelCount => alphaChannels.length;
-  List<Uint8List> alphaChannelData;
+  List<Uint8List> alphaChannelData = List(MAX_ALPHA_CHANNEL_COUNT);
 
   Uint8List iccProfile;
   int get sizeOfICCProfile => iccProfile.length;

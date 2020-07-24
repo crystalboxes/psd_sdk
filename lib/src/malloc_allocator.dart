@@ -2,7 +2,7 @@ import 'dart:typed_data';
 
 import 'allocator.dart';
 
-class MallocAllocator implements Allocator {
+class mallocAllocator implements Allocator {
   @override
   dynamic allocate(int size, int alignment) {
     return ByteData(size);

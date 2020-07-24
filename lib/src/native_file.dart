@@ -6,8 +6,8 @@ import 'package:psd_sdk/src/log.dart';
 import 'allocator.dart';
 import 'file.dart' as psd;
 
-class NativeFile extends psd.File {
-  NativeFile(Allocator allocator) : super(allocator);
+class nativeFile extends psd.File {
+  nativeFile(Allocator allocator) : super(allocator);
 
   File file;
 

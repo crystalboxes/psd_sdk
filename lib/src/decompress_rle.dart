@@ -2,7 +2,7 @@ import 'dart:typed_data';
 
 import 'log.dart';
 
-void DecompressRle(Uint8List srcData, int srcSize, Uint8List dest, int size) {
+void decompressRle(Uint8List srcData, int srcSize, Uint8List dest, int size) {
   var bytesRead = 0;
   var offset = 0;
 
@@ -48,7 +48,7 @@ void DecompressRle(Uint8List srcData, int srcSize, Uint8List dest, int size) {
   }
 }
 
-int CompressRle(Uint8List src, Uint8List dest, int size) {
+int compressRle(Uint8List src, Uint8List dest, int size) {
   var runLength = 0;
   var nonRunLength = 0;
 

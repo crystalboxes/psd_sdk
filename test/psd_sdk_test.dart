@@ -11,8 +11,8 @@ const int CHANNEL_NOT_FOUND = -1;
 
 int testA() {
   final srcPath = '${getSampleInputPath()}Sample.psd';
-  var allocator = MallocAllocator();
-  var file = NativeFile(allocator);
+  var allocator = mallocAllocator();
+  var file = nativeFile(allocator);
 
   if (!file.openRead(srcPath)) {
     print('Cannot open file.');

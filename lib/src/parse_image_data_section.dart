@@ -82,7 +82,7 @@ ImageDataSection readImageDataSectionRLE(
     final rleSize = channelSize[i];
     var rleData = reader.readBytes(rleSize);
 
-    DecompressRle(rleData, rleSize, imageData.images[i].data,
+    decompressRle(rleData, rleSize, imageData.images[i].data,
         width * height * bytesPerPixel);
 
     allocator.free(rleData);

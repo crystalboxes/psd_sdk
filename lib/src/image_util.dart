@@ -6,7 +6,7 @@ import 'data_types.dart';
 
 // ---------------------------------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------------------------
-bool IsOutside(int layerLeft, int layerTop, int layerRight, int layerBottom,
+bool isOutside(int layerLeft, int layerTop, int layerRight, int layerBottom,
     int canvasWidth, int canvasHeight) {
   // layer data can be completely outside the canvas, or overlapping, or completely inside.
   // find the overlapping rectangle first.
@@ -25,7 +25,7 @@ bool IsOutside(int layerLeft, int layerTop, int layerRight, int layerBottom,
 
 // ---------------------------------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------------------------
-bool IsSameRegion(int layerLeft, int layerTop, int layerRight, int layerBottom,
+bool isSameRegion(int layerLeft, int layerTop, int layerRight, int layerBottom,
     int canvasWidth, int canvasHeight) {
   final w = (canvasWidth);
   final h = (canvasHeight);
@@ -51,15 +51,15 @@ void copyLayerData<T extends NumDataType>(
     int layerBottom,
     int canvasWidth,
     int canvasHeight) {
-  final isOutside = IsOutside(
+  final _isOutside = isOutside(
       layerLeft, layerTop, layerRight, layerBottom, canvasWidth, canvasHeight);
-  if (isOutside) {
+  if (_isOutside) {
     return;
   }
 
-  var isSameRegion = IsSameRegion(
+  var _isSameRegion = isSameRegion(
       layerLeft, layerTop, layerRight, layerBottom, canvasWidth, canvasHeight);
-  if (isSameRegion) {
+  if (_isSameRegion) {
     // fast path, the layer is exactly the same size as the canvas
 
     for (var x = 0; x < canvasWidth * canvasHeight * sizeof<T>(); x++) {

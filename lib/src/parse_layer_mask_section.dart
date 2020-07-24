@@ -542,7 +542,7 @@ Uint8List readChannelDataRLE<T extends NumDataType>(
     // decompress RLE
     var rleData = reader.readBytes(rleDataSize);
     {
-      DecompressRle(rleData, rleDataSize, planarData, planarData.length);
+      decompressRle(rleData, rleDataSize, planarData, planarData.length);
     }
     allocator.free(rleData);
 
