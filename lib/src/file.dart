@@ -1,11 +1,25 @@
 import 'dart:typed_data';
 
-abstract class File {
-  ByteBuffer get buffer;
-  ByteData get byteData;
+class File {
+  bool setByteData(Uint8List bytes) {
+    try {
+      _uint8list = bytes;
+      _byteData = _uint8list.buffer.asByteData();
+    } catch (e) {
+      return false;
+    }
 
-  bool openRead(String filename);
-  void close();
+    return true;
+  }
 
-  int getSize();
+  Uint8List _uint8list;
+  ByteData _byteData;
+
+  ByteBuffer get buffer => _uint8list.buffer;
+
+  ByteData get byteData => _byteData;
+
+  int getSize() => _uint8list.length;
+
+  void close() {}
 }

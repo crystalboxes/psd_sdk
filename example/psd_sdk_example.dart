@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:psd_sdk/psd_sdk.dart';
 import 'tga_exporter.dart' as tga_exporter;
+import 'dart:io' as io;
 
 final int CHANNEL_NOT_FOUND = -1;
 
@@ -90,9 +91,10 @@ Uint8List createInterleavedImageRGBA<T extends NumDataType>(Uint8List srcR,
 int sampleReadPsd() {
   final srcPath = '${getSampleInputPath()}Sample.psd';
 
-  var file = NativeFile();
-
-  if (!file.openRead(srcPath)) {
+  var file = File();
+  try {
+    file.setByteData(io.File(srcPath).readAsBytesSync());
+  } catch (e) {
     print('Cannot open file.');
     return 1;
   }
@@ -172,6 +174,7 @@ int sampleReadPsd() {
       // interleave the different pieces of planar canvas data into one RGB or
       // RGBA image, depending on what channels we found, and what color mode
       // the document is stored in.
+      // ignore: unused_local_variable
       Uint8List image8, image16, image32;
       if (channelCount == 3) {
         if (document.bitsPerChannel == 8) {
@@ -264,8 +267,7 @@ int sampleReadPsd() {
 
         // use ExpandMaskToCanvas create an image that is the same size as the
         // canvas.
-        Uint8List maskCanvasData =
-            expandMaskToCanvas(document, layer.layerMask);
+        var maskCanvasData = expandMaskToCanvas(document, layer.layerMask);
         {
           var filename =
               '${getSampleOutputPath()}canvas${layerName}_usermask.tga';
@@ -334,6 +336,7 @@ int sampleReadPsd() {
           }
         }
 
+        // ignore: unused_local_variable
         Uint8List image8, image16, image32;
         if (isRgb) {
           // RGB
@@ -488,7 +491,7 @@ int sampleWritePsd() {
   {
     final dstPath = '${getSampleOutputPath()}SampleWrite_8.psd';
 
-    var file = NativeFile();
+    var file = File();
 
     // try opening the file. if it fails, bail out.
     // if (!file.OpenWrite(dstPath.c_str())) {
@@ -585,12 +588,13 @@ int sampleWritePsd() {
       writeDocument(document, file);
     }
 
+    io.File(dstPath).writeAsBytesSync(file.buffer.asUint8List());
     file.close();
   }
   {
     final dstPath = '${getSampleOutputPath()}SampleWrite_16.psd';
 
-    var file = NativeFile();
+    var file = File();
 
     // // try opening the file. if it fails, bail out.
     // if (!file.OpenWrite(dstPath.c_str())) {
@@ -634,12 +638,14 @@ int sampleWritePsd() {
       writeDocument(document, file);
     }
 
+    io.File(dstPath).writeAsBytesSync(file.buffer.asUint8List());
+
     file.close();
   }
   {
     final dstPath = 'GetSampleOutputPath()SampleWrite_32.psd';
 
-    var file = NativeFile();
+    var file = File();
 
     // try opening the file. if it fails, bail out.
     // if (!file.OpenWrite(dstPath.c_str())) {
@@ -675,6 +681,7 @@ int sampleWritePsd() {
       writeDocument(document, file);
     }
 
+    io.File(dstPath).writeAsBytesSync(file.buffer.asUint8List());
     file.close();
   }
 

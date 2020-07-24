@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:psd_sdk/src/key.dart';
 import 'package:psd_sdk/src/log.dart';
 import 'package:psd_sdk/src/sync_file_reader.dart';

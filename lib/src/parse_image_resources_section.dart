@@ -41,6 +41,7 @@ ImageResourcesSection parseImageResourcesSection(Document document, File file) {
     // the resource name is stored as a Pascal string. note that the string is padded to make the size even.
     final nameLength = reader.readByte();
     final paddedNameLength = roundUpToMultiple(nameLength + 1, 2);
+    // ignore: unused_local_variable
     final name = reader.readBytes(paddedNameLength - 1);
 
     // the resource data size is also padded to make the size even

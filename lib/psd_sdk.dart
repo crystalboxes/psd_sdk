@@ -1,9 +1,6 @@
-/// Support for doing something awesome.
-///
-/// More dartdocs go here.
 library psd_sdk;
 
-export 'src/native_file.dart';
+export 'src/file.dart';
 export 'src/parse_document.dart';
 export 'src/color_mode.dart';
 export 'src/parse_image_resources_section.dart';

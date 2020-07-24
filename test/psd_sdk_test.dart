@@ -4,16 +4,17 @@ import 'package:psd_sdk/psd_sdk.dart';
 import 'package:psd_sdk/src/file.dart';
 import '../example/psd_sdk_example.dart';
 import 'package:test/test.dart';
-
+import 'dart:io' as io;
 import 'canvas_data_test.dart';
 
 const int CHANNEL_NOT_FOUND = -1;
 
 int testA() {
   final srcPath = '${getSampleInputPath()}Sample.psd';
-  var file = NativeFile();
-
-  if (!file.openRead(srcPath)) {
+  var file = File();
+  try {
+    file.setByteData(io.File(srcPath).readAsBytesSync());
+  } catch (e) {
     print('Cannot open file.');
     return 1;
   }
@@ -202,6 +203,7 @@ int testA() {
   group('Canvas data group', () {
     testCanvasData(document, file, layer);
   });
+  return 0;
 }
 
 void testCanvasData(Document document, File file, Layer layer) {
@@ -246,39 +248,19 @@ void testCanvasData(Document document, File file, Layer layer) {
   // interleave the different pieces of planar canvas data into one RGB or
   // RGBA image, depending on what channels we found, and what color mode
   // the document is stored in.
-  Uint8List image8, image16, image32;
+  Uint8List image8;
   if (channelCount == 3) {
     if (document.bitsPerChannel == 8) {
       image8 = createInterleavedImage<uint8_t>(canvasData[0], canvasData[1],
           canvasData[2], document.width, document.height);
     } else if (document.bitsPerChannel == 16) {
-      image16 = createInterleavedImage<uint16_t>(canvasData[0], canvasData[1],
-          canvasData[2], document.width, document.height);
-    } else if (document.bitsPerChannel == 32) {
-      image32 = createInterleavedImage<float32_t>(canvasData[0], canvasData[1],
-          canvasData[2], document.width, document.height);
-    }
+    } else if (document.bitsPerChannel == 32) {}
   } else if (channelCount == 4) {
     if (document.bitsPerChannel == 8) {
       image8 = createInterleavedImageRGBA<uint8_t>(canvasData[0], canvasData[1],
           canvasData[2], canvasData[3], document.width, document.height);
     } else if (document.bitsPerChannel == 16) {
-      image16 = createInterleavedImageRGBA<uint16_t>(
-          canvasData[0],
-          canvasData[1],
-          canvasData[2],
-          canvasData[3],
-          document.width,
-          document.height);
-    } else if (document.bitsPerChannel == 32) {
-      image32 = createInterleavedImageRGBA<float32_t>(
-          canvasData[0],
-          canvasData[1],
-          canvasData[2],
-          canvasData[3],
-          document.width,
-          document.height);
-    }
+    } else if (document.bitsPerChannel == 32) {}
   }
 
   test('Channel indices', () {

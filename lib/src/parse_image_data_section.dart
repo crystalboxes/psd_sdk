@@ -10,7 +10,6 @@ import 'data_types.dart';
 import 'document.dart';
 import 'file.dart';
 import 'image_data_section.dart';
-import 'image_util.dart';
 import 'sync_file_reader.dart';
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -87,7 +86,6 @@ void _endianConvert<T extends NumDataType>(
     var byteData = images[i].data.buffer.asByteData();
 
     final sizeofT = sizeof<T>();
-    // TODO test if copied is modified
     var copied = Uint8List(size * sizeofT);
     var data = getTypedList<T>(copied) as List;
 

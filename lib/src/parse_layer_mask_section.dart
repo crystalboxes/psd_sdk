@@ -378,9 +378,11 @@ LayerMaskSection parseLayer(Document document, SyncFileReader reader,
           layerMaskSection = parseLayer(document, reader, 0, 0, length);
           reader.setPosition(offset + length);
         } else if (key == keyValue('vmsk')) {
+          // ignore: todo
           // TODO: could read extra vector mask data here
           reader.skip(length);
         } else if (key == keyValue('lnk2')) {
+          // ignore: todo
           // TODO: could read individual smart object layer data here
           reader.skip(length);
         } else {
