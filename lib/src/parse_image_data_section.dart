@@ -2,6 +2,7 @@
 // ---------------------------------------------------------------------------------------------------------------------
 import 'dart:typed_data';
 
+import 'decompress_rle.dart';
 import 'log.dart';
 
 import 'allocator.dart';
@@ -15,7 +16,7 @@ import 'sync_file_reader.dart';
 
 // ---------------------------------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------------------------
-ImageDataSection ReadImageDataSectionRaw(
+ImageDataSection readImageDataSectionRaw(
     SyncFileReader reader,
     Allocator allocator,
     int width,
@@ -41,7 +42,7 @@ ImageDataSection ReadImageDataSectionRaw(
 
 // ---------------------------------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------------------------
-ImageDataSection ReadImageDataSectionRLE(
+ImageDataSection readImageDataSectionRLE(
     SyncFileReader reader,
     Allocator allocator,
     int width,
@@ -104,9 +105,8 @@ void _endianConvert<T extends NumDataType>(
     var data = getTypedList<T>(copied) as List;
 
     for (var j = 0; j < size; ++j) {
-      var pos = sizeofT * i;
-
-      data[j] = getElemInHostEndian<T>(byteData, pos);
+      var pos = sizeofT * j;
+      data[j] = getElemHostEndian<T>(byteData, pos);
     }
     images[i].data = copied;
   }
@@ -138,10 +138,10 @@ ImageDataSection ParseImageDataSection(
   final channelCount = document.channelCount;
   final compressionType = reader.readUint16();
   if (compressionType == CompressionType.RAW) {
-    imageData = ReadImageDataSectionRaw(
+    imageData = readImageDataSectionRaw(
         reader, allocator, width, height, channelCount, bitsPerChannel ~/ 8);
   } else if (compressionType == CompressionType.RLE) {
-    imageData = ReadImageDataSectionRLE(
+    imageData = readImageDataSectionRLE(
         reader, allocator, width, height, channelCount, bitsPerChannel ~/ 8);
   } else {
     psdError(['ImageData', 'Unhandled compression type ${compressionType}.']);

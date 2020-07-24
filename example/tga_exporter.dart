@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:io' as io;
 import 'dart:typed_data';
 
 import 'package:psd_sdk/psd_sdk.dart';
@@ -59,10 +59,10 @@ TgaHeader createHeader(int width, int height, int type, int bitsPerPixel) {
 
 class TgaFile {
   String filename;
-  File _file;
+  io.File _file;
 
   TgaFile(this.filename) {
-    _file = File(filename);
+    _file = io.File(filename);
   }
 
   void write<T extends NumDataType>(num value) {

@@ -12,6 +12,7 @@ import 'bit_util.dart';
 import 'channel_type.dart';
 import 'compression_type.dart';
 import 'data_types.dart';
+import 'decompress_rle.dart';
 import 'document.dart';
 import 'file.dart';
 import 'layer.dart';
@@ -504,7 +505,7 @@ Uint8List endianConvert<T extends NumDataType>(Uint8List src, width, height) {
 
   for (var i = 0; i < size; ++i) {
     var pos = sizeofT * i;
-    data[i] = getElemInHostEndian<T>(byteData, pos);
+    data[i] = getElemHostEndian<T>(byteData, pos);
   }
   return copied;
 }

@@ -2,55 +2,7 @@
 // ---------------------------------------------------------------------------------------------------------------------
 import 'dart:typed_data';
 
-import 'package:psd_sdk/src/log.dart';
-
 import 'data_types.dart';
-
-void DecompressRle(Uint8List srcData, int srcSize, Uint8List dest, int size) {
-  var bytesRead = 0;
-  var offset = 0;
-
-  var src = 0;
-  while (offset < size) {
-    if (bytesRead >= srcSize) {
-      psdError(['DecompressRle', 'Malformed RLE data encountered']);
-      return;
-    }
-
-    final byte = srcData[src++];
-    ++bytesRead;
-
-    if (byte == 0x80) {
-      // byte == -128 (0x80) is a no-op
-    }
-    // 0x81 - 0XFF
-    else if (byte > 0x80) {
-      // next 257-byte bytes are replicated from the next source byte
-      final count = (257 - byte);
-      for (var j = 0; j < count; j++) {
-        dest[offset + j] = srcData[src];
-      }
-      src += 1;
-      offset += count;
-
-      ++bytesRead;
-    }
-    // 0x00 - 0x7F
-    else {
-      // copy next byte+1 bytes 1-by-1
-      final count = (byte + 1);
-
-      for (var j = 0; j < count; j++) {
-        dest[offset + j] = srcData[src + j];
-      }
-
-      src += count;
-      offset += count;
-
-      bytesRead += count;
-    }
-  }
-}
 
 // ---------------------------------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------------------------

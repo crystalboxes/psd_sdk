@@ -26,11 +26,11 @@ class NativeFile extends psd.File {
     return true;
   }
 
-  @override
-  ByteBuffer get buffer => _uint8list.buffer;
-
   Uint8List _uint8list;
   ByteData _byteData;
+
+  @override
+  ByteBuffer get buffer => _uint8list.buffer;
 
   @override
   ByteData get byteData => _byteData;
