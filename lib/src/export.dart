@@ -8,7 +8,6 @@ import 'package:psd_sdk/psd_sdk.dart';
 import 'package:psd_sdk/src/export_layer.dart';
 import 'package:psd_sdk/src/sync_file_writer.dart';
 
-import 'allocator.dart';
 import 'bit_util.dart';
 import 'compression_type.dart';
 import 'data_types.dart';
@@ -20,8 +19,8 @@ import 'export_metadata_attribute.dart';
 import 'image_resource_type.dart';
 import 'key.dart';
 
-ExportDocument createExportDocument(Allocator allocator, int canvasWidth,
-    int canvasHeight, int bitsPerChannel, int colorMode) {
+ExportDocument createExportDocument(
+    int canvasWidth, int canvasHeight, int bitsPerChannel, int colorMode) {
   var document = ExportDocument();
 
   document.width = canvasWidth;
@@ -43,18 +42,17 @@ ExportDocument createExportDocument(Allocator allocator, int canvasWidth,
   return document;
 }
 
-int addMetaData(
-    ExportDocument document, Allocator allocator, String name, String value) {
+int addMetaData(ExportDocument document, String name, String value) {
   final index = document.attributeCount;
   document.attributes.add(ExportMetaDataAttribute());
-  UpdateMetaData(document, allocator, index, name, value);
+  UpdateMetaData(document, index, name, value);
 
   return index;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------------------------
-String CreateString(Allocator allocator, String str) {
+String CreateString(String str) {
   // final length = str.length;
   // final paddedLength = roundUpToMultiple(length + 1, 4);
   // final newString = Uint8List(paddedLength);
@@ -66,19 +64,19 @@ String CreateString(Allocator allocator, String str) {
   return str;
 }
 
-void UpdateMetaData(ExportDocument document, Allocator allocator, int index,
-    String name, String value) {
+void UpdateMetaData(
+    ExportDocument document, int index, String name, String value) {
   var attribute = document.attributes[index];
-  attribute.name = CreateString(allocator, name);
-  attribute.value = CreateString(allocator, value);
+  attribute.name = CreateString(name);
+  attribute.value = CreateString(value);
 }
 
-int addLayer(ExportDocument document, Allocator allocator, String name) {
+int addLayer(ExportDocument document, String name) {
   final index = document.layerCount;
   document.layers.add(ExportLayer());
 
   var layer = document.layers[index];
-  layer.name = CreateString(allocator, name);
+  layer.name = CreateString(name);
   return index;
 }
 
@@ -108,7 +106,6 @@ int getChannelIndex(int channel) {
 
 void updateLayer<T extends TypedData>(
     ExportDocument document,
-    Allocator allocator,
     int layerIndex,
     int channel,
     int left,
@@ -118,14 +115,14 @@ void updateLayer<T extends TypedData>(
     TypedData planarData,
     int compression) {
   if (planarData is Uint8List) {
-    UpdateLayerImpl<uint8_t>(document, allocator, layerIndex, channel, left,
-        top, right, bottom, planarData, compression);
+    UpdateLayerImpl<uint8_t>(document, layerIndex, channel, left, top, right,
+        bottom, planarData, compression);
   } else if (planarData is Uint16List) {
-    UpdateLayerImpl<uint16_t>(document, allocator, layerIndex, channel, left,
-        top, right, bottom, planarData, compression);
+    UpdateLayerImpl<uint16_t>(document, layerIndex, channel, left, top, right,
+        bottom, planarData, compression);
   } else if (planarData is Float32List) {
-    UpdateLayerImpl<float32_t>(document, allocator, layerIndex, channel, left,
-        top, right, bottom, planarData, compression);
+    UpdateLayerImpl<float32_t>(document, layerIndex, channel, left, top, right,
+        bottom, planarData, compression);
   } else {
     print('not supported');
   }
@@ -133,7 +130,6 @@ void updateLayer<T extends TypedData>(
 
 void UpdateLayerImpl<T extends NumDataType>(
     ExportDocument document,
-    Allocator allocator,
     int layerIndex,
     int channel,
     int left,
@@ -178,41 +174,35 @@ void UpdateLayerImpl<T extends NumDataType>(
 
   if (compression == CompressionType.RAW) {
     // raw data, copy directly and convert to big endian
-    CreateDataRaw<T>(allocator, layer, channelIndex, planarData, width, height);
+    CreateDataRaw<T>(layer, channelIndex, planarData, width, height);
   } else if (compression == CompressionType.RLE) {
     // compress with RLE
-    CreateDataRLE<T>(allocator, layer, channelIndex, planarData, width, height);
+    CreateDataRLE<T>(layer, channelIndex, planarData, width, height);
   } else if (compression == CompressionType.ZIP) {
     // compress with ZIP
     // note that this has a template specialization for 32-bit float data that forwards to ZipWithPrediction.
     if (T == float32_t) {
       CreateDataZipPredictionF32(
-          allocator, layer, channelIndex, planarData, width, height);
+          layer, channelIndex, planarData, width, height);
     } else {
-      CreateDataZip<T>(
-          allocator, layer, channelIndex, planarData, width, height);
+      CreateDataZip<T>(layer, channelIndex, planarData, width, height);
     }
   } else if (compression == CompressionType.ZIP_WITH_PREDICTION) {
     if (T == float32_t) {
       CreateDataZipPredictionF32(
-          allocator, layer, channelIndex, planarData, width, height);
+          layer, channelIndex, planarData, width, height);
     } else {
       // delta-encode, then compress with ZIP
       CreateDataZipPrediction<T>(
-          allocator, layer, channelIndex, planarData, width, height);
+          layer, channelIndex, planarData, width, height);
     }
   }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------------------------
-void CreateDataZipPrediction<T extends NumDataType>(
-    Allocator allocator,
-    ExportLayer layer,
-    int channelIndex,
-    TypedData planarData,
-    int width,
-    int height) {
+void CreateDataZipPrediction<T extends NumDataType>(ExportLayer layer,
+    int channelIndex, TypedData planarData, int width, int height) {
   final size = width * height;
 
   var deltaData = getTypedList<T>(Uint8List(size * sizeof<T>())) as List;
@@ -243,8 +233,8 @@ void CreateDataZipPrediction<T extends NumDataType>(
   layer.channelSize[channelIndex] = zipData.length;
 }
 
-void CreateDataZipPredictionF32(Allocator allocator, ExportLayer layer,
-    int channelIndex, Float32List planarData, int width, int height) {
+void CreateDataZipPredictionF32(ExportLayer layer, int channelIndex,
+    Float32List planarData, int width, int height) {
   final size = width * height;
 
   // float data is first converted into planar data to allow for better compression.
@@ -289,13 +279,8 @@ void CreateDataZipPredictionF32(Allocator allocator, ExportLayer layer,
 
 // ---------------------------------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------------------------
-void CreateDataZip<T extends NumDataType>(
-    Allocator allocator,
-    ExportLayer layer,
-    int channelIndex,
-    TypedData planarData,
-    int width,
-    int height) {
+void CreateDataZip<T extends NumDataType>(ExportLayer layer, int channelIndex,
+    TypedData planarData, int width, int height) {
   final size = width * height;
 
   var bigEndianData = getTypedList<T>(Uint8List(size * sizeof<T>())) as List;
@@ -311,13 +296,8 @@ void CreateDataZip<T extends NumDataType>(
   layer.channelSize[channelIndex] = zipData.length;
 }
 
-void CreateDataRaw<T extends NumDataType>(
-    Allocator allocator,
-    ExportLayer layer,
-    int channelIndex,
-    TypedData planarData,
-    int width,
-    int height) {
+void CreateDataRaw<T extends NumDataType>(ExportLayer layer, int channelIndex,
+    TypedData planarData, int width, int height) {
   final size = width * height;
 
   final elemSize = sizeof<T>();
@@ -333,13 +313,8 @@ void CreateDataRaw<T extends NumDataType>(
   layer.channelSize[channelIndex] = size * elemSize;
 }
 
-void CreateDataRLE<T extends NumDataType>(
-    Allocator allocator,
-    ExportLayer layer,
-    int channelIndex,
-    TypedData planarData,
-    int width,
-    int height) {
+void CreateDataRLE<T extends NumDataType>(ExportLayer layer, int channelIndex,
+    TypedData planarData, int width, int height) {
   final size = width * height;
 
   // each row needs two additional bytes for storing the size of the row's data.
@@ -379,28 +354,24 @@ void CreateDataRLE<T extends NumDataType>(
   layer.channelSize[channelIndex] = offset + height * sizeof<uint16_t>();
 }
 
-void updateMergedImage(ExportDocument document, Allocator allocator,
-    TypedData planarDataR, TypedData planarDataG, TypedData planarDataB) {
+void updateMergedImage(ExportDocument document, TypedData planarDataR,
+    TypedData planarDataG, TypedData planarDataB) {
   if (planarDataR is Uint8List) {
     _updateMergedImageImpl<uint8_t>(
-        document, allocator, planarDataR, planarDataG, planarDataB);
+        document, planarDataR, planarDataG, planarDataB);
   } else if (planarDataR is Uint16List) {
     _updateMergedImageImpl<uint16_t>(
-        document, allocator, planarDataR, planarDataG, planarDataB);
+        document, planarDataR, planarDataG, planarDataB);
   } else if (planarDataR is Float32List) {
     _updateMergedImageImpl<float32_t>(
-        document, allocator, planarDataR, planarDataG, planarDataB);
+        document, planarDataR, planarDataG, planarDataB);
   } else {
     print('unsupported');
   }
 }
 
-void _updateMergedImageImpl<T extends NumDataType>(
-    ExportDocument document,
-    Allocator allocator,
-    TypedData planarDataR,
-    TypedData planarDataG,
-    TypedData planarDataB) {
+void _updateMergedImageImpl<T extends NumDataType>(ExportDocument document,
+    TypedData planarDataR, TypedData planarDataG, TypedData planarDataB) {
   // free old data
 
   // copy raw data
@@ -420,8 +391,8 @@ void _updateMergedImageImpl<T extends NumDataType>(
 
 // ---------------------------------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------------------------
-int addAlphaChannel(ExportDocument document, Allocator allocator, String name,
-    int r, int g, int b, int a, int opacity, int mode) {
+int addAlphaChannel(ExportDocument document, String name, int r, int g, int b,
+    int a, int opacity, int mode) {
   final index = document.alphaChannelCount;
   document.alphaChannels.add(AlphaChannel());
 
@@ -438,14 +409,13 @@ int addAlphaChannel(ExportDocument document, Allocator allocator, String name,
   return index;
 }
 
-void updateChannel(ExportDocument document, Allocator allocator,
-    int channelIndex, TypedData data) {
+void updateChannel(ExportDocument document, int channelIndex, TypedData data) {
   if (data is Uint8List) {
-    _updateChannelImpl<uint8_t>(document, allocator, channelIndex, data);
+    _updateChannelImpl<uint8_t>(document, channelIndex, data);
   } else if (data is Uint16List) {
-    _updateChannelImpl<uint16_t>(document, allocator, channelIndex, data);
+    _updateChannelImpl<uint16_t>(document, channelIndex, data);
   } else if (data is Float32List) {
-    _updateChannelImpl<float32_t>(document, allocator, channelIndex, data);
+    _updateChannelImpl<float32_t>(document, channelIndex, data);
   } else {
     print('unsupported');
   }
@@ -466,8 +436,8 @@ const XMP_FOOTER = '''</rdf:Description>\n
 
 // ---------------------------------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------------------------
-void _updateChannelImpl<T extends NumDataType>(ExportDocument document,
-    Allocator allocator, int channelIndex, TypedData data) {
+void _updateChannelImpl<T extends NumDataType>(
+    ExportDocument document, int channelIndex, TypedData data) {
   // free old data
 
   // copy raw data
@@ -494,7 +464,7 @@ int GetMetaDataResourceSize(ExportDocument document) {
   return metaDataSize;
 }
 
-void writeDocument(ExportDocument document, Allocator allocator, File file) {
+void writeDocument(ExportDocument document, File file) {
   var writer = SyncFileWriter(file);
 
   // signature

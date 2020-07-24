@@ -1,7 +1,6 @@
 import 'dart:typed_data';
 
 import 'alpha_channel.dart';
-import 'export_color_mode.dart';
 import 'export_layer.dart';
 import 'export_metadata_attribute.dart';
 import 'thumbnail.dart';

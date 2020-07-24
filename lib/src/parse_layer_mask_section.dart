@@ -3,11 +3,9 @@ import 'dart:typed_data';
 import 'package:archive/archive.dart';
 
 import 'package:psd_sdk/src/channel.dart';
-import 'package:psd_sdk/src/image_util.dart';
 import 'package:psd_sdk/src/key.dart';
 import 'package:psd_sdk/src/log.dart';
 
-import 'allocator.dart';
 import 'bit_util.dart';
 import 'channel_type.dart';
 import 'compression_type.dart';
@@ -21,8 +19,7 @@ import 'layer_mask_section.dart';
 import 'layer_type.dart';
 import 'sync_file_reader.dart';
 
-LayerMaskSection parseLayerMaskSection(
-    Document document, File file, Allocator allocator) {
+LayerMaskSection parseLayerMaskSection(Document document, File file) {
   // if there are no layers or masks, this section is just 4 bytes: the length field, which is set to zero.
   final section = document.layerMaskInfoSection;
   if (section.length == 0) {
@@ -34,8 +31,8 @@ LayerMaskSection parseLayerMaskSection(
   reader.setPosition(section.offset);
 
   final layerInfoSectionLength = reader.readUint32();
-  final layerMaskSection = parseLayer(document, reader, allocator,
-      section.offset, section.length, layerInfoSectionLength);
+  final layerMaskSection = parseLayer(
+      document, reader, section.offset, section.length, layerInfoSectionLength);
 
   // build the layer hierarchy
   if (layerMaskSection != null && layerMaskSection.layers != null) {
@@ -70,13 +67,8 @@ LayerMaskSection parseLayerMaskSection(
   return layerMaskSection;
 }
 
-LayerMaskSection parseLayer(
-    Document document,
-    SyncFileReader reader,
-    Allocator allocator,
-    int sectionOffset,
-    int sectionLength,
-    int layerLength) {
+LayerMaskSection parseLayer(Document document, SyncFileReader reader,
+    int sectionOffset, int sectionLength, int layerLength) {
   var layerMaskSection = LayerMaskSection();
   layerMaskSection.layers = null;
   layerMaskSection.overlayColorSpace = 0;
@@ -377,15 +369,13 @@ LayerMaskSection parseLayer(
 
         if (key == keyValue('Lr16')) {
           final offset = reader.getPosition();
-          destroyLayerMaskSection(layerMaskSection, allocator);
-          layerMaskSection =
-              parseLayer(document, reader, allocator, 0, 0, length);
+          destroyLayerMaskSection(layerMaskSection);
+          layerMaskSection = parseLayer(document, reader, 0, 0, length);
           reader.setPosition(offset + length);
         } else if (key == keyValue('Lr32')) {
           final offset = reader.getPosition();
-          destroyLayerMaskSection(layerMaskSection, allocator);
-          layerMaskSection =
-              parseLayer(document, reader, allocator, 0, 0, length);
+          destroyLayerMaskSection(layerMaskSection);
+          layerMaskSection = parseLayer(document, reader, 0, 0, length);
           reader.setPosition(offset + length);
         } else if (key == keyValue('vmsk')) {
           // TODO: could read extra vector mask data here
@@ -493,7 +483,7 @@ int readMaskParameters(
   return bytesRead;
 }
 
-void destroyLayerMaskSection(LayerMaskSection section, Allocator allocator) {}
+void destroyLayerMaskSection(LayerMaskSection section) {}
 
 Uint8List endianConvert<T extends NumDataType>(Uint8List src, width, height) {
   var byteData = src.buffer.asByteData();
@@ -513,7 +503,7 @@ Uint8List endianConvert<T extends NumDataType>(Uint8List src, width, height) {
 // ---------------------------------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------------------------
 Uint8List readChannelDataRaw<T extends NumDataType>(
-    SyncFileReader reader, Allocator allocator, int width, int height) {
+    SyncFileReader reader, int width, int height) {
   final size = width * height;
   if (size > 0) {
     var planarData = reader.readBytes(size * sizeof<T>());
@@ -526,7 +516,7 @@ Uint8List readChannelDataRaw<T extends NumDataType>(
 // ---------------------------------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------------------------
 Uint8List readChannelDataRLE<T extends NumDataType>(
-    SyncFileReader reader, Allocator allocator, int width, int height) {
+    SyncFileReader reader, int width, int height) {
   // the RLE-compressed data is preceded by a 2-byte data count for each scan line
   final size = width * height;
 
@@ -544,7 +534,6 @@ Uint8List readChannelDataRLE<T extends NumDataType>(
     {
       decompressRle(rleData, rleDataSize, planarData, planarData.length);
     }
-    allocator.free(rleData);
 
     endianConvert<T>(planarData, width, height);
 
@@ -556,8 +545,8 @@ Uint8List readChannelDataRLE<T extends NumDataType>(
 
 // ---------------------------------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------------------------
-Uint8List readChannelDataZip<T extends NumDataType>(SyncFileReader reader,
-    Allocator allocator, int width, int height, int channelSize) {
+Uint8List readChannelDataZip<T extends NumDataType>(
+    SyncFileReader reader, int width, int height, int channelSize) {
   if (channelSize > 0) {
     final size = width * height;
 
@@ -568,8 +557,6 @@ Uint8List readChannelDataZip<T extends NumDataType>(SyncFileReader reader,
     if (planarData == null || planarData.length != size * sizeof<T>()) {
       psdError(['PsdExtract', 'Error while unzipping channel data.']);
     }
-
-    allocator.free(zipData);
 
     endianConvert<T>(planarData, width, height);
 
@@ -582,11 +569,7 @@ Uint8List readChannelDataZip<T extends NumDataType>(SyncFileReader reader,
 // ---------------------------------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------------------------
 Uint8List readChannelDataZipPrediction<T extends NumDataType>(
-    SyncFileReader reader,
-    Allocator allocator,
-    int width,
-    int height,
-    int channelSize) {
+    SyncFileReader reader, int width, int height, int channelSize) {
   if (channelSize > 0) {
     final size = width * height;
 
@@ -601,11 +584,9 @@ Uint8List readChannelDataZipPrediction<T extends NumDataType>(
       psdError(['PsdExtract', 'Error while unzipping channel data.']);
     }
 
-    allocator.free(zipData);
-
     // the data generated by applying the prediction data is already in little-endian format, so it doesn't have to be
     // endian converted further.
-    applyPrediction<T>(allocator, planarData, width, height);
+    applyPrediction<T>(planarData, width, height);
 
     return planarData;
   }
@@ -616,14 +597,13 @@ Uint8List readChannelDataZipPrediction<T extends NumDataType>(
 // ---------------------------------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------------------------
 void applyPrediction<T extends NumDataType>(
-    Allocator allocator, Uint8List planarData, int width, int height) {
+    Uint8List planarData, int width, int height) {
   assert(sizeof<T>() == -1, 'Unknown data type.');
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------------------------
-void extractLayer(
-    Document document, File file, Allocator allocator, Layer layer) {
+void extractLayer(Document document, File file, Layer layer) {
   var reader = SyncFileReader(file);
 
   final channelCount = layer.channelCount;
@@ -640,25 +620,25 @@ void extractLayer(
     final compressionType = reader.readUint16();
     if (compressionType == CompressionType.RAW) {
       if (document.bitsPerChannel == 8) {
-        channel.data = readChannelDataRaw<uint8_t>(
-            reader, allocator, width.value, height.value);
+        channel.data =
+            readChannelDataRaw<uint8_t>(reader, width.value, height.value);
       } else if (document.bitsPerChannel == 16) {
-        channel.data = readChannelDataRaw<uint16_t>(
-            reader, allocator, width.value, height.value);
+        channel.data =
+            readChannelDataRaw<uint16_t>(reader, width.value, height.value);
       } else if (document.bitsPerChannel == 32) {
-        channel.data = readChannelDataRaw<float32_t>(
-            reader, allocator, width.value, height.value);
+        channel.data =
+            readChannelDataRaw<float32_t>(reader, width.value, height.value);
       }
     } else if (compressionType == CompressionType.RLE) {
       if (document.bitsPerChannel == 8) {
-        channel.data = readChannelDataRLE<uint8_t>(
-            reader, allocator, width.value, height.value);
+        channel.data =
+            readChannelDataRLE<uint8_t>(reader, width.value, height.value);
       } else if (document.bitsPerChannel == 16) {
-        channel.data = readChannelDataRLE<uint16_t>(
-            reader, allocator, width.value, height.value);
+        channel.data =
+            readChannelDataRLE<uint16_t>(reader, width.value, height.value);
       } else if (document.bitsPerChannel == 32) {
-        channel.data = readChannelDataRLE<float32_t>(
-            reader, allocator, width.value, height.value);
+        channel.data =
+            readChannelDataRLE<float32_t>(reader, width.value, height.value);
       }
     } else if (compressionType == CompressionType.ZIP) {
       // note that we need to subtract 2 bytes from the channel data size because we already read the uint16_t
@@ -667,15 +647,15 @@ void extractLayer(
       final channelDataSize = channel.size - 2;
       if (document.bitsPerChannel == 8) {
         channel.data = readChannelDataZip<uint8_t>(
-            reader, allocator, width.value, height.value, channelDataSize);
+            reader, width.value, height.value, channelDataSize);
       } else if (document.bitsPerChannel == 16) {
         channel.data = readChannelDataZip<uint16_t>(
-            reader, allocator, width.value, height.value, channelDataSize);
+            reader, width.value, height.value, channelDataSize);
       } else if (document.bitsPerChannel == 32) {
         // note that this is NOT a bug.
         // in 32-bit mode, Photoshop always interprets ZIP compression as being ZIP_WITH_PREDICTION, presumably to get better compression when writing files.
         channel.data = readChannelDataZipPrediction<float32_t>(
-            reader, allocator, width.value, height.value, channelDataSize);
+            reader, width.value, height.value, channelDataSize);
       }
     } else if (compressionType == CompressionType.ZIP_WITH_PREDICTION) {
       // note that we need to subtract 2 bytes from the channel data size because we already read the uint16_t
@@ -684,13 +664,13 @@ void extractLayer(
       final channelDataSize = channel.size - 2;
       if (document.bitsPerChannel == 8) {
         channel.data = readChannelDataZipPrediction<uint8_t>(
-            reader, allocator, width.value, height.value, channelDataSize);
+            reader, width.value, height.value, channelDataSize);
       } else if (document.bitsPerChannel == 16) {
         channel.data = readChannelDataZipPrediction<uint16_t>(
-            reader, allocator, width.value, height.value, channelDataSize);
+            reader, width.value, height.value, channelDataSize);
       } else if (document.bitsPerChannel == 32) {
         channel.data = readChannelDataZipPrediction<float32_t>(
-            reader, allocator, width.value, height.value, channelDataSize);
+            reader, width.value, height.value, channelDataSize);
       }
     } else {
       assert(false, 'Unsupported compression type $compressionType');

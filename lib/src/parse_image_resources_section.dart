@@ -1,7 +1,6 @@
 import 'package:psd_sdk/src/key.dart';
 import 'package:psd_sdk/src/log.dart';
 
-import 'allocator.dart';
 import 'alpha_channel.dart';
 import 'bit_util.dart';
 import 'document.dart';
@@ -11,8 +10,7 @@ import 'image_resources_section.dart';
 import 'sync_file_reader.dart';
 import 'thumbnail.dart';
 
-ImageResourcesSection parseImageResourcesSection(
-    Document document, File file, Allocator allocator) {
+ImageResourcesSection parseImageResourcesSection(Document document, File file) {
   final imageResources = ImageResourcesSection();
 
   imageResources.alphaChannels = null;
@@ -243,6 +241,3 @@ ImageResourcesSection parseImageResourcesSection(
   }
   return imageResources;
 }
-
-void destroyImageResourcesSection(
-    ImageResourcesSection section, Allocator allocator) {}

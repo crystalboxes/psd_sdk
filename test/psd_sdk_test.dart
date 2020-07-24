@@ -11,15 +11,14 @@ const int CHANNEL_NOT_FOUND = -1;
 
 int testA() {
   final srcPath = '${getSampleInputPath()}Sample.psd';
-  var allocator = mallocAllocator();
-  var file = nativeFile(allocator);
+  var file = NativeFile();
 
   if (!file.openRead(srcPath)) {
     print('Cannot open file.');
     return 1;
   }
 
-  final document = createDocument(file, allocator);
+  final document = createDocument(file);
   if (document == null) {
     print('Cannot create document.');
     file.close();
@@ -29,12 +28,12 @@ int testA() {
   // the sample only supports RGB colormode
   if (document.colorMode != ColorMode.RGB) {
     print('Document is not in RGB color mode.\n');
-    destroyDocument(document, allocator);
+    destroyDocument(document);
     file.close();
     return 1;
   }
 
-  final layerMaskSection = parseLayerMaskSection(document, file, allocator);
+  final layerMaskSection = parseLayerMaskSection(document, file);
   var hasTransparencyMask = layerMaskSection.hasTransparencyMask;
   var layer = layerMaskSection.layers[0];
 
@@ -54,7 +53,7 @@ int testA() {
   // extract all layers one by one. this should be done in parallel for
   // maximum efficiency.
 
-  var imageData = ParseImageDataSection(document, file, allocator);
+  var imageData = ParseImageDataSection(document, file);
   // interleave the planar image data into one RGB or RGBA image.
   // store the rest of the (alpha) channels and the transparency mask
   // separately.
@@ -92,7 +91,6 @@ int testA() {
     // RGB
     if (document.bitsPerChannel == 8) {
       image8 = createInterleavedImage<uint8_t>(
-          allocator,
           imageData.images[0].data,
           imageData.images[1].data,
           imageData.images[2].data,
@@ -100,7 +98,6 @@ int testA() {
           document.height);
     } else if (document.bitsPerChannel == 16) {
       image16 = createInterleavedImage<uint16_t>(
-          allocator,
           imageData.images[0].data,
           imageData.images[1].data,
           imageData.images[2].data,
@@ -108,7 +105,6 @@ int testA() {
           document.height);
     } else if (document.bitsPerChannel == 32) {
       image32 = createInterleavedImage<float32_t>(
-          allocator,
           imageData.images[0].data,
           imageData.images[1].data,
           imageData.images[2].data,
@@ -119,7 +115,6 @@ int testA() {
     // RGBA
     if (document.bitsPerChannel == 8) {
       image8 = createInterleavedImageRGBA<uint8_t>(
-          allocator,
           imageData.images[0].data,
           imageData.images[1].data,
           imageData.images[2].data,
@@ -128,7 +123,6 @@ int testA() {
           document.height);
     } else if (document.bitsPerChannel == 16) {
       image16 = createInterleavedImageRGBA<uint16_t>(
-          allocator,
           imageData.images[0].data,
           imageData.images[1].data,
           imageData.images[2].data,
@@ -137,7 +131,6 @@ int testA() {
           document.height);
     } else if (document.bitsPerChannel == 32) {
       image32 = createInterleavedImageRGBA<float32_t>(
-          allocator,
           imageData.images[0].data,
           imageData.images[1].data,
           imageData.images[2].data,
@@ -207,13 +200,12 @@ int testA() {
   });
 
   group('Canvas data group', () {
-    testCanvasData(document, file, allocator, layer);
+    testCanvasData(document, file, layer);
   });
 }
 
-void testCanvasData(
-    Document document, File file, Allocator allocator, Layer layer) {
-  extractLayer(document, file, allocator, layer);
+void testCanvasData(Document document, File file, Layer layer) {
+  extractLayer(document, file, layer);
 
   // check availability of R, G, B, and A channels.
   // we need to determine the indices of channels individually, because
@@ -235,18 +227,18 @@ void testCanvasData(
       (indexG != CHANNEL_NOT_FOUND) &&
       (indexB != CHANNEL_NOT_FOUND)) {
     // RGB channels were found.
-    canvasData[0] = expandChannelToCanvas2(
-        document, allocator, layer, layer.channels[indexR]);
-    canvasData[1] = expandChannelToCanvas2(
-        document, allocator, layer, layer.channels[indexG]);
-    canvasData[2] = expandChannelToCanvas2(
-        document, allocator, layer, layer.channels[indexB]);
+    canvasData[0] =
+        expandChannelToCanvas2(document, layer, layer.channels[indexR]);
+    canvasData[1] =
+        expandChannelToCanvas2(document, layer, layer.channels[indexG]);
+    canvasData[2] =
+        expandChannelToCanvas2(document, layer, layer.channels[indexB]);
     channelCount = 3;
 
     if (indexA != CHANNEL_NOT_FOUND) {
       // A channel was also found.
-      canvasData[3] = expandChannelToCanvas2(
-          document, allocator, layer, layer.channels[indexA]);
+      canvasData[3] =
+          expandChannelToCanvas2(document, layer, layer.channels[indexA]);
       channelCount = 4;
     }
   }
@@ -257,28 +249,21 @@ void testCanvasData(
   Uint8List image8, image16, image32;
   if (channelCount == 3) {
     if (document.bitsPerChannel == 8) {
-      image8 = createInterleavedImage<uint8_t>(allocator, canvasData[0],
-          canvasData[1], canvasData[2], document.width, document.height);
+      image8 = createInterleavedImage<uint8_t>(canvasData[0], canvasData[1],
+          canvasData[2], document.width, document.height);
     } else if (document.bitsPerChannel == 16) {
-      image16 = createInterleavedImage<uint16_t>(allocator, canvasData[0],
-          canvasData[1], canvasData[2], document.width, document.height);
+      image16 = createInterleavedImage<uint16_t>(canvasData[0], canvasData[1],
+          canvasData[2], document.width, document.height);
     } else if (document.bitsPerChannel == 32) {
-      image32 = createInterleavedImage<float32_t>(allocator, canvasData[0],
-          canvasData[1], canvasData[2], document.width, document.height);
+      image32 = createInterleavedImage<float32_t>(canvasData[0], canvasData[1],
+          canvasData[2], document.width, document.height);
     }
   } else if (channelCount == 4) {
     if (document.bitsPerChannel == 8) {
-      image8 = createInterleavedImageRGBA<uint8_t>(
-          allocator,
-          canvasData[0],
-          canvasData[1],
-          canvasData[2],
-          canvasData[3],
-          document.width,
-          document.height);
+      image8 = createInterleavedImageRGBA<uint8_t>(canvasData[0], canvasData[1],
+          canvasData[2], canvasData[3], document.width, document.height);
     } else if (document.bitsPerChannel == 16) {
       image16 = createInterleavedImageRGBA<uint16_t>(
-          allocator,
           canvasData[0],
           canvasData[1],
           canvasData[2],
@@ -287,7 +272,6 @@ void testCanvasData(
           document.height);
     } else if (document.bitsPerChannel == 32) {
       image32 = createInterleavedImageRGBA<float32_t>(
-          allocator,
           canvasData[0],
           canvasData[1],
           canvasData[2],

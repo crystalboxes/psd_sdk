@@ -5,7 +5,6 @@ import 'dart:typed_data';
 import 'decompress_rle.dart';
 import 'log.dart';
 
-import 'allocator.dart';
 import 'compression_type.dart';
 import 'data_types.dart';
 import 'document.dart';
@@ -16,13 +15,8 @@ import 'sync_file_reader.dart';
 
 // ---------------------------------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------------------------
-ImageDataSection readImageDataSectionRaw(
-    SyncFileReader reader,
-    Allocator allocator,
-    int width,
-    int height,
-    int channelCount,
-    int bytesPerPixel) {
+ImageDataSection readImageDataSectionRaw(SyncFileReader reader, int width,
+    int height, int channelCount, int bytesPerPixel) {
   final size = width * height;
   if (size == 0) {
     return null;
@@ -42,13 +36,8 @@ ImageDataSection readImageDataSectionRaw(
 
 // ---------------------------------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------------------------
-ImageDataSection readImageDataSectionRLE(
-    SyncFileReader reader,
-    Allocator allocator,
-    int width,
-    int height,
-    int channelCount,
-    int bytesPerPixel) {
+ImageDataSection readImageDataSectionRLE(SyncFileReader reader, int width,
+    int height, int channelCount, int bytesPerPixel) {
   // the RLE-compressed data is preceded by a 2-byte data count for each scan line, per channel.
   // we store the size of the RLE data per channel, and assume a maximum of 256 channels.
   assert(channelCount < 256,
@@ -84,8 +73,6 @@ ImageDataSection readImageDataSectionRLE(
 
     decompressRle(rleData, rleSize, imageData.images[i].data,
         width * height * bytesPerPixel);
-
-    allocator.free(rleData);
   }
 
   return imageData;
@@ -112,8 +99,7 @@ void _endianConvert<T extends NumDataType>(
   }
 }
 
-ImageDataSection ParseImageDataSection(
-    Document document, File file, Allocator allocator) {
+ImageDataSection ParseImageDataSection(Document document, File file) {
   // this is the merged image. it is only stored if "maximize compatibility" is turned on when saving a PSD file.
   // image data is stored in planar order: first red data, then green data, and so on.
   // each plane is stored in scan-line order, with no padding bytes.
@@ -139,10 +125,10 @@ ImageDataSection ParseImageDataSection(
   final compressionType = reader.readUint16();
   if (compressionType == CompressionType.RAW) {
     imageData = readImageDataSectionRaw(
-        reader, allocator, width, height, channelCount, bitsPerChannel ~/ 8);
+        reader, width, height, channelCount, bitsPerChannel ~/ 8);
   } else if (compressionType == CompressionType.RLE) {
     imageData = readImageDataSectionRLE(
-        reader, allocator, width, height, channelCount, bitsPerChannel ~/ 8);
+        reader, width, height, channelCount, bitsPerChannel ~/ 8);
   } else {
     psdError(['ImageData', 'Unhandled compression type ${compressionType}.']);
   }
@@ -175,12 +161,4 @@ ImageDataSection ParseImageDataSection(
   }
 
   return imageData;
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------------------------------
-void destroyImageDataSection(ImageDataSection section, Allocator allocator) {
-  for (var i = 0; i < section.imageCount; ++i) {
-    allocator.free(section.images[i].data);
-  }
 }

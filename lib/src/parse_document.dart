@@ -4,11 +4,10 @@ import 'package:psd_sdk/src/key.dart';
 import 'package:psd_sdk/src/log.dart';
 import 'package:psd_sdk/src/sync_file_reader.dart';
 
-import 'allocator.dart';
 import 'document.dart';
 import 'file.dart';
 
-Document createDocument(File file, Allocator allocator) {
+Document createDocument(File file) {
   final reader = SyncFileReader(file);
   reader.setPosition(0);
 
@@ -100,4 +99,4 @@ Document createDocument(File file, Allocator allocator) {
   return document;
 }
 
-void destroyDocument(Document document, Allocator allocator) {}
+void destroyDocument(Document document) {}

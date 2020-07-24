@@ -3,11 +3,10 @@ import 'dart:typed_data';
 
 import 'package:psd_sdk/src/log.dart';
 
-import 'allocator.dart';
 import 'file.dart' as psd;
 
-class nativeFile extends psd.File {
-  nativeFile(Allocator allocator) : super(allocator);
+class NativeFile extends psd.File {
+  NativeFile();
 
   File file;
 
