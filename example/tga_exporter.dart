@@ -76,18 +76,18 @@ class TgaFile {
   }
 
   void writeHeader(TgaHeader header) {
-    write<uint8_t>(header.idLength);
-    write<uint8_t>(header.paletteType);
-    write<uint8_t>(header.type);
-    write<uint16_t>(header.paletteOffset);
-    write<uint16_t>(header.paletteLength);
-    write<uint8_t>(header.bitsPerPaletteEntry);
-    write<uint16_t>(header.originX);
-    write<uint16_t>(header.originY);
-    write<uint16_t>(header.width);
-    write<uint16_t>(header.height);
-    write<uint8_t>(header.bitsPerPixel);
-    write<uint8_t>(header.attributes);
+    write<Uint8T>(header.idLength);
+    write<Uint8T>(header.paletteType);
+    write<Uint8T>(header.type);
+    write<Uint16T>(header.paletteOffset);
+    write<Uint16T>(header.paletteLength);
+    write<Uint8T>(header.bitsPerPaletteEntry);
+    write<Uint16T>(header.originX);
+    write<Uint16T>(header.originY);
+    write<Uint16T>(header.width);
+    write<Uint16T>(header.height);
+    write<Uint8T>(header.bitsPerPixel);
+    write<Uint8T>(header.attributes);
   }
 
   var list = <int>[];

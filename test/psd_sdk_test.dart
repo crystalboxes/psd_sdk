@@ -28,7 +28,6 @@ int testA() {
   // the sample only supports RGB colormode
   if (document.colorMode != ColorMode.RGB) {
     print('Document is not in RGB color mode.\n');
-    destroyDocument(document);
     return 1;
   }
 
@@ -89,21 +88,21 @@ int testA() {
   if (isRgb) {
     // RGB
     if (document.bitsPerChannel == 8) {
-      image8 = createInterleavedImage<uint8_t>(
+      image8 = createInterleavedImage<Uint8T>(
           imageData.images[0].data,
           imageData.images[1].data,
           imageData.images[2].data,
           document.width,
           document.height);
     } else if (document.bitsPerChannel == 16) {
-      image16 = createInterleavedImage<uint16_t>(
+      image16 = createInterleavedImage<Uint16T>(
           imageData.images[0].data,
           imageData.images[1].data,
           imageData.images[2].data,
           document.width,
           document.height);
     } else if (document.bitsPerChannel == 32) {
-      image32 = createInterleavedImage<float32_t>(
+      image32 = createInterleavedImage<Float32T>(
           imageData.images[0].data,
           imageData.images[1].data,
           imageData.images[2].data,
@@ -113,7 +112,7 @@ int testA() {
   } else {
     // RGBA
     if (document.bitsPerChannel == 8) {
-      image8 = createInterleavedImageRGBA<uint8_t>(
+      image8 = createInterleavedImageRGBA<Uint8T>(
           imageData.images[0].data,
           imageData.images[1].data,
           imageData.images[2].data,
@@ -121,7 +120,7 @@ int testA() {
           document.width,
           document.height);
     } else if (document.bitsPerChannel == 16) {
-      image16 = createInterleavedImageRGBA<uint16_t>(
+      image16 = createInterleavedImageRGBA<Uint16T>(
           imageData.images[0].data,
           imageData.images[1].data,
           imageData.images[2].data,
@@ -129,7 +128,7 @@ int testA() {
           document.width,
           document.height);
     } else if (document.bitsPerChannel == 32) {
-      image32 = createInterleavedImageRGBA<float32_t>(
+      image32 = createInterleavedImageRGBA<Float32T>(
           imageData.images[0].data,
           imageData.images[1].data,
           imageData.images[2].data,
@@ -213,13 +212,13 @@ void testCanvasData(Document document, File file, Layer layer) {
   Uint8List image8;
   if (channelCount == 3) {
     if (document.bitsPerChannel == 8) {
-      image8 = createInterleavedImage<uint8_t>(canvasData[0], canvasData[1],
+      image8 = createInterleavedImage<Uint8T>(canvasData[0], canvasData[1],
           canvasData[2], document.width, document.height);
     } else if (document.bitsPerChannel == 16) {
     } else if (document.bitsPerChannel == 32) {}
   } else if (channelCount == 4) {
     if (document.bitsPerChannel == 8) {
-      image8 = createInterleavedImageRGBA<uint8_t>(canvasData[0], canvasData[1],
+      image8 = createInterleavedImageRGBA<Uint8T>(canvasData[0], canvasData[1],
           canvasData[2], canvasData[3], document.width, document.height);
     } else if (document.bitsPerChannel == 16) {
     } else if (document.bitsPerChannel == 32) {}

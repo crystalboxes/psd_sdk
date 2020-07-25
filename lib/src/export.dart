@@ -100,13 +100,13 @@ void updateLayer<T extends TypedData>(
     TypedData planarData,
     int compression) {
   if (planarData is Uint8List) {
-    UpdateLayerImpl<uint8_t>(document, layerIndex, channel, left, top, right,
+    UpdateLayerImpl<Uint8T>(document, layerIndex, channel, left, top, right,
         bottom, planarData, compression);
   } else if (planarData is Uint16List) {
-    UpdateLayerImpl<uint16_t>(document, layerIndex, channel, left, top, right,
+    UpdateLayerImpl<Uint16T>(document, layerIndex, channel, left, top, right,
         bottom, planarData, compression);
   } else if (planarData is Float32List) {
-    UpdateLayerImpl<float32_t>(document, layerIndex, channel, left, top, right,
+    UpdateLayerImpl<Float32T>(document, layerIndex, channel, left, top, right,
         bottom, planarData, compression);
   } else {
     print('not supported');
@@ -159,14 +159,14 @@ void UpdateLayerImpl<T extends NumDataType>(
   } else if (compression == CompressionType.ZIP) {
     // compress with ZIP
     // note that this has a template specialization for 32-bit float data that forwards to ZipWithPrediction.
-    if (T == float32_t) {
+    if (T == Float32T) {
       CreateDataZipPredictionF32(
           layer, channelIndex, planarData, width, height);
     } else {
       CreateDataZip<T>(layer, channelIndex, planarData, width, height);
     }
   } else if (compression == CompressionType.ZIP_WITH_PREDICTION) {
-    if (T == float32_t) {
+    if (T == Float32T) {
       CreateDataZipPredictionF32(
           layer, channelIndex, planarData, width, height);
     } else {
@@ -195,7 +195,7 @@ void CreateDataZipPrediction<T extends NumDataType>(ExportLayer layer,
       final current = (planarData as List)[planarDataPos + 0];
       final value = current - previous;
 
-      deltaData[deltaDataPos++] = (value & (T is uint8_t ? 0xFF : 0xFFFF));
+      deltaData[deltaDataPos++] = (value & (T is Uint8T ? 0xFF : 0xFFFF));
       ++planarDataPos;
     }
   }
@@ -218,34 +218,34 @@ void CreateDataZipPredictionF32(ExportLayer layer, int channelIndex,
   // float data is first converted into planar data to allow for better compression.
   // this is done row by row, so if the bytes of the floats in a row consist of "1234123412341234" they will be turned into "1111222233334444".
   // the data is also converted to big-endian in the same loop.
-  var bigEndianPlanarData = Uint8List(size * sizeof<float32_t>());
+  var bigEndianPlanarData = Uint8List(size * sizeof<Float32T>());
   for (var y = 0; y < height; ++y) {
     for (var x = 0; x < width; ++x) {
-      var asBytes = ByteData(sizeof<float32_t>());
+      var asBytes = ByteData(sizeof<Float32T>());
       asBytes.setFloat32(0, planarData[y * width + x], Endian.host);
-      bigEndianPlanarData[y * width * sizeof<float32_t>() + x + width * 0] =
+      bigEndianPlanarData[y * width * sizeof<Float32T>() + x + width * 0] =
           asBytes.getUint8(3);
-      bigEndianPlanarData[y * width * sizeof<float32_t>() + x + width * 1] =
+      bigEndianPlanarData[y * width * sizeof<Float32T>() + x + width * 1] =
           asBytes.getUint8(2);
-      bigEndianPlanarData[y * width * sizeof<float32_t>() + x + width * 2] =
+      bigEndianPlanarData[y * width * sizeof<Float32T>() + x + width * 2] =
           asBytes.getUint8(1);
-      bigEndianPlanarData[y * width * sizeof<float32_t>() + x + width * 3] =
+      bigEndianPlanarData[y * width * sizeof<Float32T>() + x + width * 3] =
           asBytes.getUint8(0);
     }
   }
 
   // now delta encode the individual bytes row by row
-  var deltaData = Uint8List(size * sizeof<float32_t>());
+  var deltaData = Uint8List(size * sizeof<Float32T>());
   for (var y = 0; y < height; ++y) {
-    deltaData[y * width * sizeof<float32_t>()] =
-        bigEndianPlanarData[y * width * sizeof<float32_t>()];
+    deltaData[y * width * sizeof<Float32T>()] =
+        bigEndianPlanarData[y * width * sizeof<Float32T>()];
     for (var x = 1; x < width * 4; ++x) {
       final previous =
-          bigEndianPlanarData[y * width * sizeof<float32_t>() + x - 1];
-      final current = bigEndianPlanarData[y * width * sizeof<float32_t>() + x];
+          bigEndianPlanarData[y * width * sizeof<Float32T>() + x - 1];
+      final current = bigEndianPlanarData[y * width * sizeof<Float32T>() + x];
       final value = current - previous;
 
-      deltaData[y * width * sizeof<float32_t>() + x] = (value & 0xFF);
+      deltaData[y * width * sizeof<Float32T>() + x] = (value & 0xFF);
     }
   }
 
@@ -297,7 +297,7 @@ void CreateDataRLE<T extends NumDataType>(ExportLayer layer, int channelIndex,
 
   // each row needs two additional bytes for storing the size of the row's data.
   // we pack the data row by row, and copy it into the final buffer.
-  var rleData = Uint8List(height * sizeof<uint16_t>() + size * sizeof<T>() * 2);
+  var rleData = Uint8List(height * sizeof<Uint16T>() + size * sizeof<T>() * 2);
 
   var rleRowData = Uint8List(width * sizeof<T>() * 2);
   var bigEndianRowData = getTypedList<T>(Uint8List(width * sizeof<T>()));
@@ -319,29 +319,29 @@ void CreateDataRLE<T extends NumDataType>(ExportLayer layer, int channelIndex,
     // copy 2 bytes row size, and copy RLE data
     rleData.buffer
         .asByteData()
-        .setUint16(y * sizeof<uint16_t>(), compressedSize, Endian.big);
+        .setUint16(y * sizeof<Uint16T>(), compressedSize, Endian.big);
 
     for (var i = 0; i < compressedSize; i++) {
-      rleData[i + height * sizeof<uint16_t>() + offset] = rleRowData[i];
+      rleData[i + height * sizeof<Uint16T>() + offset] = rleRowData[i];
     }
 
     offset += compressedSize;
   }
 
   layer.channelData[channelIndex] = rleData;
-  layer.channelSize[channelIndex] = offset + height * sizeof<uint16_t>();
+  layer.channelSize[channelIndex] = offset + height * sizeof<Uint16T>();
 }
 
 void updateMergedImage(ExportDocument document, TypedData planarDataR,
     TypedData planarDataG, TypedData planarDataB) {
   if (planarDataR is Uint8List) {
-    _updateMergedImageImpl<uint8_t>(
+    _updateMergedImageImpl<Uint8T>(
         document, planarDataR, planarDataG, planarDataB);
   } else if (planarDataR is Uint16List) {
-    _updateMergedImageImpl<uint16_t>(
+    _updateMergedImageImpl<Uint16T>(
         document, planarDataR, planarDataG, planarDataB);
   } else if (planarDataR is Float32List) {
-    _updateMergedImageImpl<float32_t>(
+    _updateMergedImageImpl<Float32T>(
         document, planarDataR, planarDataG, planarDataB);
   } else {
     print('unsupported');
@@ -389,11 +389,11 @@ int addAlphaChannel(ExportDocument document, String name, int r, int g, int b,
 
 void updateChannel(ExportDocument document, int channelIndex, TypedData data) {
   if (data is Uint8List) {
-    _updateChannelImpl<uint8_t>(document, channelIndex, data);
+    _updateChannelImpl<Uint8T>(document, channelIndex, data);
   } else if (data is Uint16List) {
-    _updateChannelImpl<uint16_t>(document, channelIndex, data);
+    _updateChannelImpl<Uint16T>(document, channelIndex, data);
   } else if (data is Float32List) {
-    _updateChannelImpl<float32_t>(document, channelIndex, data);
+    _updateChannelImpl<Float32T>(document, channelIndex, data);
   } else {
     print('unsupported');
   }
@@ -446,10 +446,10 @@ void writeDocument(ExportDocument document, File file) {
   var writer = SyncFileWriter(file);
 
   // signature
-  writeToFileBE<uint32_t>(writer, keyValue('8BPS'));
+  writeToFileBE<Uint32T>(writer, keyValue('8BPS'));
 
   // version
-  writeToFileBE<uint16_t>(writer, (1));
+  writeToFileBE<Uint16T>(writer, (1));
 
   // reserved bytes
   final zeroes = Uint8List.fromList(<int>[0, 0, 0, 0, 0, 0]);
@@ -458,77 +458,77 @@ void writeDocument(ExportDocument document, File file) {
   // channel count
   final documentChannelCount =
       (document.colorMode + document.alphaChannelCount);
-  writeToFileBE<uint16_t>(writer, documentChannelCount);
+  writeToFileBE<Uint16T>(writer, documentChannelCount);
 
   // header
   final mode = (document.colorMode);
-  writeToFileBE<uint32_t>(writer, document.height);
-  writeToFileBE<uint32_t>(writer, document.width);
-  writeToFileBE<uint16_t>(writer, document.bitsPerChannel);
-  writeToFileBE<uint16_t>(writer, mode);
+  writeToFileBE<Uint32T>(writer, document.height);
+  writeToFileBE<Uint32T>(writer, document.width);
+  writeToFileBE<Uint16T>(writer, document.bitsPerChannel);
+  writeToFileBE<Uint16T>(writer, mode);
 
   if (document.bitsPerChannel == 32) {
     // in 32-bit mode, Photoshop insists on having a color mode data section with magic info.
     // this whole section is undocumented. there's no information to be found on the web.
     // we write Photoshop's default values.
     final colorModeSectionLength = 112;
-    writeToFileBE<uint32_t>(writer, colorModeSectionLength);
+    writeToFileBE<Uint32T>(writer, colorModeSectionLength);
     {
       // tests suggest that this is some kind of HDR toning information
       final key = keyValue('hdrt');
-      writeToFileBE<uint32_t>(writer, key);
+      writeToFileBE<Uint32T>(writer, key);
 
-      writeToFileBE<uint32_t>(writer, (3)); // ?
-      writeToFileBE<float32_t>(writer, (0.23)); // ?
-      writeToFileBE<uint32_t>(writer, (2)); // ?
+      writeToFileBE<Uint32T>(writer, (3)); // ?
+      writeToFileBE<Float32T>(writer, (0.23)); // ?
+      writeToFileBE<Uint32T>(writer, (2)); // ?
 
-      writeToFileBE<uint32_t>(
+      writeToFileBE<Uint32T>(
           writer, 8); // length of the following Unicode string
-      writeToFileBE<uint16_t>(writer, 'D'.codeUnitAt(0));
-      writeToFileBE<uint16_t>(writer, 'e'.codeUnitAt(0));
-      writeToFileBE<uint16_t>(writer, 'f'.codeUnitAt(0));
-      writeToFileBE<uint16_t>(writer, 'a'.codeUnitAt(0));
-      writeToFileBE<uint16_t>(writer, 'u'.codeUnitAt(0));
-      writeToFileBE<uint16_t>(writer, 'l'.codeUnitAt(0));
-      writeToFileBE<uint16_t>(writer, 't'.codeUnitAt(0));
-      writeToFileBE<uint16_t>(writer, '\0'.codeUnitAt(0));
+      writeToFileBE<Uint16T>(writer, 'D'.codeUnitAt(0));
+      writeToFileBE<Uint16T>(writer, 'e'.codeUnitAt(0));
+      writeToFileBE<Uint16T>(writer, 'f'.codeUnitAt(0));
+      writeToFileBE<Uint16T>(writer, 'a'.codeUnitAt(0));
+      writeToFileBE<Uint16T>(writer, 'u'.codeUnitAt(0));
+      writeToFileBE<Uint16T>(writer, 'l'.codeUnitAt(0));
+      writeToFileBE<Uint16T>(writer, 't'.codeUnitAt(0));
+      writeToFileBE<Uint16T>(writer, '\0'.codeUnitAt(0));
 
-      writeToFileBE<uint16_t>(writer, (2)); // ?
-      writeToFileBE<uint16_t>(writer, (2)); // ?
-      writeToFileBE<uint16_t>(writer, (0)); // ?
-      writeToFileBE<uint16_t>(writer, (0)); // ?
-      writeToFileBE<uint16_t>(writer, (255)); // ?
-      writeToFileBE<uint16_t>(writer, (255)); // ?
+      writeToFileBE<Uint16T>(writer, (2)); // ?
+      writeToFileBE<Uint16T>(writer, (2)); // ?
+      writeToFileBE<Uint16T>(writer, (0)); // ?
+      writeToFileBE<Uint16T>(writer, (0)); // ?
+      writeToFileBE<Uint16T>(writer, (255)); // ?
+      writeToFileBE<Uint16T>(writer, (255)); // ?
 
-      writeToFileBE<uint8_t>(writer, (1)); // ?
-      writeToFileBE<uint8_t>(writer, (1)); // ?
-      writeToFileBE<uint32_t>(writer, (0)); // ?
-      writeToFileBE<uint32_t>(writer, (0)); // ?
+      writeToFileBE<Uint8T>(writer, (1)); // ?
+      writeToFileBE<Uint8T>(writer, (1)); // ?
+      writeToFileBE<Uint32T>(writer, (0)); // ?
+      writeToFileBE<Uint32T>(writer, (0)); // ?
 
-      writeToFileBE<float32_t>(writer, (16.0)); // ?
-      writeToFileBE<uint32_t>(writer, (1)); // ?
-      writeToFileBE<uint32_t>(writer, (1)); // ?
-      writeToFileBE<float32_t>(writer, (1.0)); // ?
+      writeToFileBE<Float32T>(writer, (16.0)); // ?
+      writeToFileBE<Uint32T>(writer, (1)); // ?
+      writeToFileBE<Uint32T>(writer, (1)); // ?
+      writeToFileBE<Float32T>(writer, (1.0)); // ?
     }
     {
       // HDR alpha information?
       final key = keyValue('hdra');
-      writeToFileBE<uint32_t>(writer, key);
+      writeToFileBE<Uint32T>(writer, key);
 
-      writeToFileBE<uint32_t>(writer, (6)); // number of following values
-      writeToFileBE<float32_t>(writer, (0.0)); // ?
-      writeToFileBE<float32_t>(writer, (20.0)); // ?
-      writeToFileBE<float32_t>(writer, (30.0)); // ?
-      writeToFileBE<float32_t>(writer, (0.0)); // ?
-      writeToFileBE<float32_t>(writer, (0.0)); // ?
-      writeToFileBE<float32_t>(writer, (1.0)); // ?
+      writeToFileBE<Uint32T>(writer, (6)); // number of following values
+      writeToFileBE<Float32T>(writer, (0.0)); // ?
+      writeToFileBE<Float32T>(writer, (20.0)); // ?
+      writeToFileBE<Float32T>(writer, (30.0)); // ?
+      writeToFileBE<Float32T>(writer, (0.0)); // ?
+      writeToFileBE<Float32T>(writer, (0.0)); // ?
+      writeToFileBE<Float32T>(writer, (1.0)); // ?
 
-      writeToFileBE<uint32_t>(writer, (0)); // ?
-      writeToFileBE<uint16_t>(writer, (0)); // ?
+      writeToFileBE<Uint32T>(writer, (0)); // ?
+      writeToFileBE<Uint16T>(writer, (0)); // ?
     }
   } else {
     // empty color mode data section
-    writeToFileBE<uint32_t>(writer, (0));
+    writeToFileBE<Uint32T>(writer, (0));
   }
 
   // image resources
@@ -584,7 +584,7 @@ void writeDocument(ExportDocument document, File file) {
           : 0;
 
       // image resource section starts with length of the whole section
-      writeToFileBE<uint32_t>(writer, sectionLength);
+      writeToFileBE<Uint32T>(writer, sectionLength);
 
       if (hasMetaData) {
         writeImageResource(writer, ImageResource.XMP_METADATA, metaDataSize);
@@ -609,7 +609,7 @@ void writeDocument(ExportDocument document, File file) {
         final bytesWritten = writer.getPosition() - start;
         if (bytesWritten & 1 != 0) {
           // write padding byte
-          writeToFileBE<uint8_t>(writer, (0));
+          writeToFileBE<Uint8T>(writer, (0));
         }
       }
 
@@ -623,7 +623,7 @@ void writeDocument(ExportDocument document, File file) {
         final bytesWritten = writer.getPosition() - start;
         if (bytesWritten & 1 != 0) {
           // write padding byte
-          writeToFileBE<uint8_t>(writer, (0));
+          writeToFileBE<Uint8T>(writer, (0));
         }
       }
 
@@ -637,7 +637,7 @@ void writeDocument(ExportDocument document, File file) {
         final bytesWritten = writer.getPosition() - start;
         if (bytesWritten & 1 != 0) {
           // write padding byte
-          writeToFileBE<uint8_t>(writer, (0));
+          writeToFileBE<Uint8T>(writer, (0));
         }
       }
 
@@ -655,14 +655,14 @@ void writeDocument(ExportDocument document, File file) {
           final totalSize =
               widthInBytes * document.thumbnail.height * planeCount;
 
-          writeToFileBE<uint32_t>(writer, format);
-          writeToFileBE<uint32_t>(writer, document.thumbnail.width);
-          writeToFileBE<uint32_t>(writer, document.thumbnail.height);
-          writeToFileBE<uint32_t>(writer, widthInBytes);
-          writeToFileBE<uint32_t>(writer, totalSize);
-          writeToFileBE<uint32_t>(writer, document.thumbnail.binaryJpegSize);
-          writeToFileBE<uint16_t>(writer, bitsPerPixel);
-          writeToFileBE<uint16_t>(writer, planeCount);
+          writeToFileBE<Uint32T>(writer, format);
+          writeToFileBE<Uint32T>(writer, document.thumbnail.width);
+          writeToFileBE<Uint32T>(writer, document.thumbnail.height);
+          writeToFileBE<Uint32T>(writer, widthInBytes);
+          writeToFileBE<Uint32T>(writer, totalSize);
+          writeToFileBE<Uint32T>(writer, document.thumbnail.binaryJpegSize);
+          writeToFileBE<Uint16T>(writer, bitsPerPixel);
+          writeToFileBE<Uint16T>(writer, planeCount);
 
           writer.write(
               document.thumbnail.binaryJpeg, document.thumbnail.binaryJpegSize);
@@ -670,7 +670,7 @@ void writeDocument(ExportDocument document, File file) {
         final bytesWritten = writer.getPosition() - start;
         if (bytesWritten & 1 != 0) {
           // write padding byte
-          writeToFileBE<uint8_t>(writer, (0));
+          writeToFileBE<Uint8T>(writer, (0));
         }
       }
 
@@ -683,24 +683,24 @@ void writeDocument(ExportDocument document, File file) {
           final start = writer.getPosition();
 
           // version
-          writeToFileBE<uint32_t>(writer, (1));
+          writeToFileBE<Uint32T>(writer, (1));
 
           // per channel data
           for (var i = 0; i < document.alphaChannelCount; ++i) {
             var channel = document.alphaChannels[i];
-            writeToFileBE<uint16_t>(writer, channel.colorSpace);
-            writeToFileBE<uint16_t>(writer, channel.color[0]);
-            writeToFileBE<uint16_t>(writer, channel.color[1]);
-            writeToFileBE<uint16_t>(writer, channel.color[2]);
-            writeToFileBE<uint16_t>(writer, channel.color[3]);
-            writeToFileBE<uint16_t>(writer, channel.opacity);
-            writeToFileBE<uint8_t>(writer, channel.mode);
+            writeToFileBE<Uint16T>(writer, channel.colorSpace);
+            writeToFileBE<Uint16T>(writer, channel.color[0]);
+            writeToFileBE<Uint16T>(writer, channel.color[1]);
+            writeToFileBE<Uint16T>(writer, channel.color[2]);
+            writeToFileBE<Uint16T>(writer, channel.color[3]);
+            writeToFileBE<Uint16T>(writer, channel.opacity);
+            writeToFileBE<Uint8T>(writer, channel.mode);
           }
 
           final bytesWritten = writer.getPosition() - start;
           if (bytesWritten & 1 != 0) {
             // write padding byte
-            writeToFileBE<uint8_t>(writer, (0));
+            writeToFileBE<Uint8T>(writer, (0));
           }
         }
 
@@ -712,7 +712,7 @@ void writeDocument(ExportDocument document, File file) {
           final start = writer.getPosition();
 
           for (var i = 0; i < document.alphaChannelCount; ++i) {
-            writeToFileBE<uint8_t>(
+            writeToFileBE<Uint8T>(
                 writer, (document.alphaChannels[i].asciiName.length));
             writer.write(document.alphaChannels[i].asciiName,
                 (document.alphaChannels[i].asciiName.length));
@@ -721,7 +721,7 @@ void writeDocument(ExportDocument document, File file) {
           final bytesWritten = writer.getPosition() - start;
           if (bytesWritten & 1 != 0) {
             // write padding byte
-            writeToFileBE<uint8_t>(writer, (0));
+            writeToFileBE<Uint8T>(writer, (0));
           }
         }
 
@@ -735,27 +735,27 @@ void writeDocument(ExportDocument document, File file) {
           for (var i = 0; i < document.alphaChannelCount; ++i) {
             // PSD expects UTF-16 strings, followed by a null terminator
             final length = document.alphaChannels[i].asciiName.length;
-            writeToFileBE<uint32_t>(writer, (length + 1));
+            writeToFileBE<Uint32T>(writer, (length + 1));
 
             final asciiStr = document.alphaChannels[i].asciiName;
             for (var j = 0; j < length; ++j) {
               final unicodeGlyph = asciiStr.codeUnitAt(j);
-              writeToFileBE<uint16_t>(writer, unicodeGlyph);
+              writeToFileBE<Uint16T>(writer, unicodeGlyph);
             }
 
-            writeToFileBE<uint16_t>(writer, (0));
+            writeToFileBE<Uint16T>(writer, (0));
           }
 
           final bytesWritten = writer.getPosition() - start;
           if (bytesWritten & 1 != 0) {
             // write padding byte
-            writeToFileBE<uint8_t>(writer, (0));
+            writeToFileBE<Uint8T>(writer, (0));
           }
         }
       }
     } else {
       // no image resources
-      writeToFileBE<uint32_t>(writer, (0));
+      writeToFileBE<Uint32T>(writer, (0));
     }
   }
 
@@ -772,87 +772,87 @@ void writeDocument(ExportDocument document, File file) {
     // 8-bit data
     // layer mask section length also includes global layer mask info marker. layer info follows directly after that
     final layerMaskSectionLength = layerInfoSectionLength + 4;
-    writeToFileBE<uint32_t>(writer, layerMaskSectionLength);
+    writeToFileBE<Uint32T>(writer, layerMaskSectionLength);
   } else {
     // 16-bit and 32-bit layer data is stored in Additional Layer Information, so we leave the following layer info section empty
     final layerMaskSectionLength = layerInfoSectionLength + 4 * 5;
-    writeToFileBE<uint32_t>(writer, layerMaskSectionLength);
+    writeToFileBE<Uint32T>(writer, layerMaskSectionLength);
 
     // empty layer info section
-    writeToFileBE<uint32_t>(writer, (0));
+    writeToFileBE<Uint32T>(writer, (0));
 
     // empty global layer mask info
-    writeToFileBE<uint32_t>(writer, (0));
+    writeToFileBE<Uint32T>(writer, (0));
 
     // additional layer information
     final signature = keyValue('8BIM');
-    writeToFileBE<uint32_t>(writer, signature);
+    writeToFileBE<Uint32T>(writer, signature);
 
     if (document.bitsPerChannel == 16) {
       final key = keyValue('Lr16');
-      writeToFileBE<uint32_t>(writer, key);
+      writeToFileBE<Uint32T>(writer, key);
     } else if (document.bitsPerChannel == 32) {
       final key = keyValue('Lr32');
-      writeToFileBE<uint32_t>(writer, key);
+      writeToFileBE<Uint32T>(writer, key);
     }
   }
 
-  writeToFileBE<uint32_t>(writer, layerInfoSectionLength);
+  writeToFileBE<Uint32T>(writer, layerInfoSectionLength);
 
   // layer count
-  writeToFileBE<uint16_t>(writer, document.layerCount);
+  writeToFileBE<Uint16T>(writer, document.layerCount);
 
   // per-layer info
   for (var i = 0; i < document.layerCount; ++i) {
     var layer = document.layers[i];
-    writeToFileBE<int32_t>(writer, layer.top);
-    writeToFileBE<int32_t>(writer, layer.left);
-    writeToFileBE<int32_t>(writer, layer.bottom);
-    writeToFileBE<int32_t>(writer, layer.right);
+    writeToFileBE<Int32T>(writer, layer.top);
+    writeToFileBE<Int32T>(writer, layer.left);
+    writeToFileBE<Int32T>(writer, layer.bottom);
+    writeToFileBE<Int32T>(writer, layer.right);
 
     final channelCount = getChannelCount(layer);
-    writeToFileBE<uint16_t>(writer, channelCount);
+    writeToFileBE<Uint16T>(writer, channelCount);
 
     // per-channel info
     for (var j = 0; j < ExportLayer.MAX_CHANNEL_COUNT; ++j) {
       if (layer.channelData[j] != null) {
         final channelId = getChannelId(j);
-        writeToFileBE<int16_t>(writer, channelId);
+        writeToFileBE<Int16T>(writer, channelId);
 
         // channel data always has a 2-byte compression type in front of the data
         final channelDataSize = layer.channelSize[j] + 2;
-        writeToFileBE<uint32_t>(writer, channelDataSize);
+        writeToFileBE<Uint32T>(writer, channelDataSize);
       }
     }
 
     // blend mode signature
-    writeToFileBE<uint32_t>(writer, keyValue('8BIM'));
+    writeToFileBE<Uint32T>(writer, keyValue('8BIM'));
 
     // blend mode data
     final opacity = 255;
     final clipping = 0;
     final flags = 0;
     final filler = 0;
-    writeToFileBE<uint32_t>(writer, keyValue('norm'));
-    writeToFileBE<uint8_t>(writer, opacity);
-    writeToFileBE<uint8_t>(writer, clipping);
-    writeToFileBE<uint8_t>(writer, flags);
-    writeToFileBE<uint8_t>(writer, filler);
+    writeToFileBE<Uint32T>(writer, keyValue('norm'));
+    writeToFileBE<Uint8T>(writer, opacity);
+    writeToFileBE<Uint8T>(writer, clipping);
+    writeToFileBE<Uint8T>(writer, flags);
+    writeToFileBE<Uint8T>(writer, filler);
 
     // extra data, including layer name
     final extraDataLength = getExtraDataLength(layer);
-    writeToFileBE<uint32_t>(writer, extraDataLength);
+    writeToFileBE<Uint32T>(writer, extraDataLength);
 
     final layerMaskDataLength = 0;
-    writeToFileBE<uint32_t>(writer, layerMaskDataLength);
+    writeToFileBE<Uint32T>(writer, layerMaskDataLength);
 
     final layerBlendingRangesDataLength = 0;
-    writeToFileBE<uint32_t>(writer, layerBlendingRangesDataLength);
+    writeToFileBE<Uint32T>(writer, layerBlendingRangesDataLength);
 
     // the layer name is stored as pascal string, padded to a multiple of 4
     final nameLength = ((layer.name.length));
     final paddedNameLength = roundUpToMultiple(nameLength + 1, 4);
-    writeToFileBE<uint8_t>(writer, nameLength);
+    writeToFileBE<Uint8T>(writer, nameLength);
     writer.write(layer.name, paddedNameLength - 1);
   }
 
@@ -863,7 +863,7 @@ void writeDocument(ExportDocument document, File file) {
     // per-channel data
     for (var j = 0; j < ExportLayer.MAX_CHANNEL_COUNT; ++j) {
       if (layer.channelData[j] != null) {
-        writeToFileBE<uint16_t>(writer, layer.channelCompression[j]);
+        writeToFileBE<Uint16T>(writer, layer.channelCompression[j]);
         writer.write(layer.channelData[j], layer.channelSize[j]);
       }
     }
@@ -876,7 +876,7 @@ void writeDocument(ExportDocument document, File file) {
 
   // global layer mask info
   final globalLayerMaskInfoLength = 0;
-  writeToFileBE<uint32_t>(writer, globalLayerMaskInfoLength);
+  writeToFileBE<Uint32T>(writer, globalLayerMaskInfoLength);
 
   // for some reason, Photoshop insists on having an (uncompressed) Image Data section for 32-bit files.
   // this is unfortunate, because it makes the files very large. don't think this is intentional, but rather a bug.
@@ -890,7 +890,7 @@ void writeDocument(ExportDocument document, File file) {
     var emptyMemory = Uint8List(size);
 
     // write merged image
-    writeToFileBE<uint16_t>(writer, (CompressionType.RAW));
+    writeToFileBE<Uint16T>(writer, (CompressionType.RAW));
     if (document.colorMode == ExportColorMode.GRAYSCALE) {
       final dataGray = document.mergedImageData[0] ?? emptyMemory;
       writer.write(dataGray, size);
@@ -918,16 +918,16 @@ void writeToFile(SyncFileWriter writer, Uint8List zeroes) {
 
 void writeToFileBE<T extends NumDataType>(SyncFileWriter writer, num i) {
   switch (T) {
-    case uint8_t:
-    case int8_t:
-    case uint16_t:
-    case int16_t:
-    case float32_t:
-    case int32_t:
-    case uint32_t:
-    case float64_t:
-    case int64_t:
-    case uint64_t:
+    case Uint8T:
+    case Int8T:
+    case Uint16T:
+    case Int16T:
+    case Float32T:
+    case Int32T:
+    case Uint32T:
+    case Float64T:
+    case Int64T:
+    case Uint64T:
       var bd = ByteData(sizeof<T>());
       setByteData<T>(bd, i, Endian.big);
       writer.write(bd, sizeof<T>());
@@ -1003,7 +1003,7 @@ int getExtraDataLength(ExportLayer layer) {
 // ---------------------------------------------------------------------------------------------------------------------
 int getDisplayInfoResourceSize(ExportDocument document) {
   // display info consists of 4-byte version, followed by 13 bytes per channel
-  return sizeof<uint32_t>() + 13 * document.alphaChannelCount;
+  return sizeof<Uint32T>() + 13 * document.alphaChannelCount;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -1033,10 +1033,10 @@ int getUnicodeChannelNamesResourceSize(ExportDocument document) {
 // ---------------------------------------------------------------------------------------------------------------------
 int getImageResourceSize() {
   var size = 0;
-  size += sizeof<uint32_t>(); // signature
-  size += sizeof<uint16_t>(); // resource ID
+  size += sizeof<Uint32T>(); // signature
+  size += sizeof<Uint16T>(); // resource ID
   size += 2; // padded name, 2 zero bytes
-  size += sizeof<uint32_t>(); // resource size
+  size += sizeof<Uint32T>(); // resource size
 
   return size;
 }
@@ -1045,14 +1045,14 @@ int getImageResourceSize() {
 // ---------------------------------------------------------------------------------------------------------------------
 void writeImageResource(SyncFileWriter writer, int id, int resourceSize) {
   final signature = keyValue('8BIM');
-  writeToFileBE<uint32_t>(writer, signature);
-  writeToFileBE<uint16_t>(writer, id);
+  writeToFileBE<Uint32T>(writer, signature);
+  writeToFileBE<Uint16T>(writer, id);
 
   // padded name, unused
-  writeToFileBE<uint8_t>(writer, (0));
-  writeToFileBE<uint8_t>(writer, (0));
+  writeToFileBE<Uint8T>(writer, (0));
+  writeToFileBE<Uint8T>(writer, (0));
 
-  writeToFileBE<uint32_t>(writer, resourceSize);
+  writeToFileBE<Uint32T>(writer, resourceSize);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

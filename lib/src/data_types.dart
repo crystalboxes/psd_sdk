@@ -2,39 +2,39 @@ import 'dart:typed_data';
 
 abstract class NumDataType {}
 
-class uint8_t extends NumDataType {}
+class Uint8T extends NumDataType {}
 
-class int8_t extends NumDataType {}
+class Int8T extends NumDataType {}
 
-class uint16_t extends NumDataType {}
+class Uint16T extends NumDataType {}
 
-class int16_t extends NumDataType {}
+class Int16T extends NumDataType {}
 
-class uint32_t extends NumDataType {}
+class Uint32T extends NumDataType {}
 
-class int32_t extends NumDataType {}
+class Int32T extends NumDataType {}
 
-class uint64_t extends NumDataType {}
+class Uint64T extends NumDataType {}
 
-class int64_t extends NumDataType {}
+class Int64T extends NumDataType {}
 
-class float32_t extends NumDataType {}
+class Float32T extends NumDataType {}
 
-class float64_t extends NumDataType {}
+class Float64T extends NumDataType {}
 
 bool isDouble<T extends NumDataType>() {
   switch (T) {
-    case float64_t:
-    case float32_t:
+    case Float64T:
+    case Float32T:
       return true;
-    case uint16_t:
-    case int16_t:
-    case int32_t:
-    case uint32_t:
-    case int64_t:
-    case uint64_t:
-    case uint8_t:
-    case int8_t:
+    case Uint16T:
+    case Int16T:
+    case Int32T:
+    case Uint32T:
+    case Int64T:
+    case Uint64T:
+    case Uint8T:
+    case Int8T:
       return false;
     default:
       throw Error();
@@ -45,34 +45,34 @@ void setByteData<T extends NumDataType>(ByteData data, num value,
     [Endian endian]) {
   endian ??= Endian.host;
   switch (T) {
-    case float64_t:
+    case Float64T:
       data.setFloat64(0, value, endian);
       break;
-    case float32_t:
+    case Float32T:
       data.setFloat32(0, value, endian);
       break;
-    case uint16_t:
+    case Uint16T:
       data.setUint16(0, value, endian);
       break;
-    case int16_t:
+    case Int16T:
       data.setInt16(0, value, endian);
       break;
-    case int32_t:
+    case Int32T:
       data.setInt32(0, value, endian);
       break;
-    case uint32_t:
+    case Uint32T:
       data.setUint32(0, value, endian);
       break;
-    case int64_t:
+    case Int64T:
       data.setInt64(0, value, endian);
       break;
-    case uint64_t:
+    case Uint64T:
       data.setUint64(0, value, endian);
       break;
-    case uint8_t:
+    case Uint8T:
       data.setUint8(0, value);
       break;
-    case int8_t:
+    case Int8T:
       data.setInt8(0, value);
       break;
     default:
@@ -83,84 +83,46 @@ void setByteData<T extends NumDataType>(ByteData data, num value,
 
 int sizeof<T extends NumDataType>() {
   switch (T) {
-    case uint16_t:
-    case int16_t:
+    case Uint16T:
+    case Int16T:
       return 2;
-    case float32_t:
-    case int32_t:
-    case uint32_t:
+    case Float32T:
+    case Int32T:
+    case Uint32T:
       return 4;
-    case float64_t:
-    case int64_t:
-    case uint64_t:
+    case Float64T:
+    case Int64T:
+    case Uint64T:
       return 8;
-    case uint8_t:
-    case int8_t:
+    case Uint8T:
+    case Int8T:
       return 1;
     default:
       throw Error();
   }
 }
 
-void printType<T extends NumDataType>() {
-  switch (T) {
-    case uint16_t:
-      print('uint16_t');
-      break;
-    case int16_t:
-      print('int16_t');
-      break;
-    case float32_t:
-      print('float32_t');
-      break;
-    case int32_t:
-      print('int32_t');
-      break;
-    case uint32_t:
-      print('uint32_t');
-      break;
-    case float64_t:
-      print('float64_t');
-      break;
-    case int64_t:
-      print('int64_t');
-      break;
-    case uint64_t:
-      print('uint64_t');
-      break;
-    case uint8_t:
-      print('uint8_t');
-      break;
-    case int8_t:
-      print('int8_t');
-      break;
-    default:
-      throw Error();
-      break;
-  }
-}
-
 TypedData getTypedList<T extends NumDataType>(Uint8List list) {
   switch (T) {
-    case uint16_t:
+    case Uint16T:
       return list.buffer.asUint16List();
-    case int16_t:
+    case Int16T:
       return list.buffer.asInt16List();
-    case float32_t:
+    case Float32T:
       return list.buffer.asFloat32List();
-    case int32_t:
+    case Int32T:
       return list.buffer.asInt32List();
-    case uint32_t:
+    case Uint32T:
       return list.buffer.asUint32List();
-    case float64_t:
+    case Float64T:
       return list.buffer.asFloat64List();
-    case int64_t:
+    case Int64T:
       return list.buffer.asInt64List();
-    case uint64_t:
+    case Uint64T:
       return list.buffer.asUint64List();
-    case uint8_t:
+    case Uint8T:
       return list.buffer.asUint8List();
-    case int8_t:
+    case Int8T:
       return list.buffer.asInt8List();
     default:
       throw Error();
@@ -181,25 +143,25 @@ num nativeToBigEndian<T extends NumDataType>(num value) {
 num getElemEndian<T extends NumDataType>(
     ByteData byteData, int byteOffset, Endian endian) {
   switch (T) {
-    case uint16_t:
+    case Uint16T:
       return byteData.getUint16(byteOffset, endian);
-    case int16_t:
+    case Int16T:
       return byteData.getInt16(byteOffset, endian);
-    case float32_t:
+    case Float32T:
       return byteData.getFloat32(byteOffset, endian);
-    case int32_t:
+    case Int32T:
       return byteData.getInt32(byteOffset, endian);
-    case uint32_t:
+    case Uint32T:
       return byteData.getUint32(byteOffset, endian);
-    case float64_t:
+    case Float64T:
       return byteData.getFloat64(byteOffset, endian);
-    case int64_t:
+    case Int64T:
       return byteData.getInt64(byteOffset, endian);
-    case uint64_t:
+    case Uint64T:
       return byteData.getUint64(byteOffset, endian);
-    case uint8_t:
+    case Uint8T:
       return byteData.getUint8(byteOffset);
-    case int8_t:
+    case Int8T:
       return byteData.getInt8(byteOffset);
     default:
       throw Error();

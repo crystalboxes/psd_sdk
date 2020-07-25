@@ -142,15 +142,15 @@ ImageDataSection ParseImageDataSection(Document document, File file) {
   // endian-convert the data
   switch (bitsPerChannel) {
     case 8:
-      _endianConvert<uint8_t>(imageData.images, width, height, channelCount);
+      _endianConvert<Uint8T>(imageData.images, width, height, channelCount);
       break;
 
     case 16:
-      _endianConvert<uint16_t>(imageData.images, width, height, channelCount);
+      _endianConvert<Uint16T>(imageData.images, width, height, channelCount);
       break;
 
     case 32:
-      _endianConvert<float32_t>(imageData.images, width, height, channelCount);
+      _endianConvert<Float32T>(imageData.images, width, height, channelCount);
       break;
 
     default:

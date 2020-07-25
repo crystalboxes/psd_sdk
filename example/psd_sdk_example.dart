@@ -39,13 +39,13 @@ Uint8List expandChannelToCanvas<T extends NumDataType>(
 Uint8List expandChannelToCanvas2(
     Document document, BoundsRect layer, Channel channel) {
   if (document.bitsPerChannel == 8) {
-    return expandChannelToCanvas<uint8_t>(
+    return expandChannelToCanvas<Uint8T>(
         layer, channel.data, document.width, document.height);
   } else if (document.bitsPerChannel == 16) {
-    return expandChannelToCanvas<uint16_t>(
+    return expandChannelToCanvas<Uint16T>(
         layer, channel.data, document.width, document.height);
   } else if (document.bitsPerChannel == 32) {
-    return expandChannelToCanvas<float32_t>(
+    return expandChannelToCanvas<Float32T>(
         layer, channel.data, document.width, document.height);
   }
 
@@ -54,13 +54,13 @@ Uint8List expandChannelToCanvas2(
 
 Uint8List expandMaskToCanvas(Document document, Mask mask) {
   if (document.bitsPerChannel == 8) {
-    return expandChannelToCanvas<uint8_t>(
+    return expandChannelToCanvas<Uint8T>(
         mask, mask.data, document.width, document.height);
   } else if (document.bitsPerChannel == 16) {
-    return expandChannelToCanvas<uint16_t>(
+    return expandChannelToCanvas<Uint16T>(
         mask, mask.data, document.width, document.height);
   } else if (document.bitsPerChannel == 32) {
-    return expandChannelToCanvas<float32_t>(
+    return expandChannelToCanvas<Float32T>(
         mask, mask.data, document.width, document.height);
   }
 
@@ -108,7 +108,6 @@ int sampleReadPsd() {
   // the sample only supports RGB colormode
   if (document.colorMode != ColorMode.RGB) {
     print('Document is not in RGB color mode.\n');
-    destroyDocument(document);
     return 1;
   }
 
@@ -176,18 +175,18 @@ int sampleReadPsd() {
       Uint8List image8, image16, image32;
       if (channelCount == 3) {
         if (document.bitsPerChannel == 8) {
-          image8 = createInterleavedImage<uint8_t>(canvasData[0], canvasData[1],
+          image8 = createInterleavedImage<Uint8T>(canvasData[0], canvasData[1],
               canvasData[2], document.width, document.height);
         } else if (document.bitsPerChannel == 16) {
-          image16 = createInterleavedImage<uint16_t>(canvasData[0],
+          image16 = createInterleavedImage<Uint16T>(canvasData[0],
               canvasData[1], canvasData[2], document.width, document.height);
         } else if (document.bitsPerChannel == 32) {
-          image32 = createInterleavedImage<float32_t>(canvasData[0],
+          image32 = createInterleavedImage<Float32T>(canvasData[0],
               canvasData[1], canvasData[2], document.width, document.height);
         }
       } else if (channelCount == 4) {
         if (document.bitsPerChannel == 8) {
-          image8 = createInterleavedImageRGBA<uint8_t>(
+          image8 = createInterleavedImageRGBA<Uint8T>(
               canvasData[0],
               canvasData[1],
               canvasData[2],
@@ -195,7 +194,7 @@ int sampleReadPsd() {
               document.width,
               document.height);
         } else if (document.bitsPerChannel == 16) {
-          image16 = createInterleavedImageRGBA<uint16_t>(
+          image16 = createInterleavedImageRGBA<Uint16T>(
               canvasData[0],
               canvasData[1],
               canvasData[2],
@@ -203,7 +202,7 @@ int sampleReadPsd() {
               document.width,
               document.height);
         } else if (document.bitsPerChannel == 32) {
-          image32 = createInterleavedImageRGBA<float32_t>(
+          image32 = createInterleavedImageRGBA<Float32T>(
               canvasData[0],
               canvasData[1],
               canvasData[2],
@@ -339,21 +338,21 @@ int sampleReadPsd() {
         if (isRgb) {
           // RGB
           if (document.bitsPerChannel == 8) {
-            image8 = createInterleavedImage<uint8_t>(
+            image8 = createInterleavedImage<Uint8T>(
                 imageData.images[0].data,
                 imageData.images[1].data,
                 imageData.images[2].data,
                 document.width,
                 document.height);
           } else if (document.bitsPerChannel == 16) {
-            image16 = createInterleavedImage<uint16_t>(
+            image16 = createInterleavedImage<Uint16T>(
                 imageData.images[0].data,
                 imageData.images[1].data,
                 imageData.images[2].data,
                 document.width,
                 document.height);
           } else if (document.bitsPerChannel == 32) {
-            image32 = createInterleavedImage<float32_t>(
+            image32 = createInterleavedImage<Float32T>(
                 imageData.images[0].data,
                 imageData.images[1].data,
                 imageData.images[2].data,
@@ -363,7 +362,7 @@ int sampleReadPsd() {
         } else {
           // RGBA
           if (document.bitsPerChannel == 8) {
-            image8 = createInterleavedImageRGBA<uint8_t>(
+            image8 = createInterleavedImageRGBA<Uint8T>(
                 imageData.images[0].data,
                 imageData.images[1].data,
                 imageData.images[2].data,
@@ -371,7 +370,7 @@ int sampleReadPsd() {
                 document.width,
                 document.height);
           } else if (document.bitsPerChannel == 16) {
-            image16 = createInterleavedImageRGBA<uint16_t>(
+            image16 = createInterleavedImageRGBA<Uint16T>(
                 imageData.images[0].data,
                 imageData.images[1].data,
                 imageData.images[2].data,
@@ -379,7 +378,7 @@ int sampleReadPsd() {
                 document.width,
                 document.height);
           } else if (document.bitsPerChannel == 32) {
-            image32 = createInterleavedImageRGBA<float32_t>(
+            image32 = createInterleavedImageRGBA<Float32T>(
                 imageData.images[0].data,
                 imageData.images[1].data,
                 imageData.images[2].data,
@@ -424,9 +423,6 @@ int sampleReadPsd() {
         }
       }
     }
-
-    // don't forget to destroy the document, and close the file.
-    destroyDocument(document);
   }
   return 0;
 }
@@ -434,47 +430,47 @@ int sampleReadPsd() {
 final IMAGE_WIDTH = 256;
 final IMAGE_HEIGHT = 256;
 
-final g_multiplyData = Uint8List(IMAGE_WIDTH * IMAGE_HEIGHT);
-final g_xorData = Uint8List(IMAGE_WIDTH * IMAGE_HEIGHT);
-final g_orData = Uint8List(IMAGE_WIDTH * IMAGE_HEIGHT);
-final g_andData = Uint8List(IMAGE_WIDTH * IMAGE_HEIGHT);
-final g_checkerBoardData = Uint8List(IMAGE_WIDTH * IMAGE_HEIGHT);
+final gMultiplyData = Uint8List(IMAGE_WIDTH * IMAGE_HEIGHT);
+final gXorData = Uint8List(IMAGE_WIDTH * IMAGE_HEIGHT);
+final gOrData = Uint8List(IMAGE_WIDTH * IMAGE_HEIGHT);
+final gAndData = Uint8List(IMAGE_WIDTH * IMAGE_HEIGHT);
+final gCheckerBoardData = Uint8List(IMAGE_WIDTH * IMAGE_HEIGHT);
 
-final g_multiplyData16 = Uint16List(IMAGE_HEIGHT * IMAGE_WIDTH);
-final g_xorData16 = Uint16List(IMAGE_HEIGHT * IMAGE_WIDTH);
-final g_orData16 = Uint16List(IMAGE_HEIGHT * IMAGE_WIDTH);
-final g_andData16 = Uint16List(IMAGE_HEIGHT * IMAGE_WIDTH);
-final g_checkerBoardData16 = Uint16List(IMAGE_HEIGHT * IMAGE_WIDTH);
+final gMultiplyData16 = Uint16List(IMAGE_HEIGHT * IMAGE_WIDTH);
+final gXorData16 = Uint16List(IMAGE_HEIGHT * IMAGE_WIDTH);
+final gOrData16 = Uint16List(IMAGE_HEIGHT * IMAGE_WIDTH);
+final gAndData16 = Uint16List(IMAGE_HEIGHT * IMAGE_WIDTH);
+final gCheckerBoardData16 = Uint16List(IMAGE_HEIGHT * IMAGE_WIDTH);
 
-final g_multiplyData32 = Float32List(IMAGE_WIDTH * IMAGE_HEIGHT);
-final g_xorData32 = Float32List(IMAGE_WIDTH * IMAGE_HEIGHT);
-final g_orData32 = Float32List(IMAGE_WIDTH * IMAGE_HEIGHT);
-final g_andData32 = Float32List(IMAGE_WIDTH * IMAGE_HEIGHT);
-final g_checkerBoardData32 = Float32List(IMAGE_WIDTH * IMAGE_HEIGHT);
+final gMultiplyData32 = Float32List(IMAGE_WIDTH * IMAGE_HEIGHT);
+final gXorData32 = Float32List(IMAGE_WIDTH * IMAGE_HEIGHT);
+final gOrData32 = Float32List(IMAGE_WIDTH * IMAGE_HEIGHT);
+final gAndData32 = Float32List(IMAGE_WIDTH * IMAGE_HEIGHT);
+final gCheckerBoardData32 = Float32List(IMAGE_WIDTH * IMAGE_HEIGHT);
 
 // ---------------------------------------------------------------------------------------------------------------------
 void GenerateImageData() {
   for (var y = 0; y < IMAGE_HEIGHT; ++y) {
     for (var x = 0; x < IMAGE_WIDTH; ++x) {
-      g_multiplyData[y * IMAGE_WIDTH + x] = (x * y >> 8) & 0xFF;
-      g_xorData[y * IMAGE_WIDTH + x] = (x ^ y) & 0xFF;
-      g_orData[y * IMAGE_WIDTH + x] = (x | y) & 0xFF;
-      g_andData[y * IMAGE_WIDTH + x] = (x & y) & 0xFF;
-      g_checkerBoardData[y * IMAGE_WIDTH + x] =
+      gMultiplyData[y * IMAGE_WIDTH + x] = (x * y >> 8) & 0xFF;
+      gXorData[y * IMAGE_WIDTH + x] = (x ^ y) & 0xFF;
+      gOrData[y * IMAGE_WIDTH + x] = (x | y) & 0xFF;
+      gAndData[y * IMAGE_WIDTH + x] = (x & y) & 0xFF;
+      gCheckerBoardData[y * IMAGE_WIDTH + x] =
           (x ~/ 8 + y ~/ 8) & 1 != 0 ? 255 : 128;
 
-      g_multiplyData16[y * IMAGE_WIDTH + x] = (x * y) & 0xFFFF;
-      g_xorData16[y * IMAGE_WIDTH + x] = ((x ^ y) * 256) & 0xFFFF;
-      g_orData16[y * IMAGE_WIDTH + x] = ((x | y) * 256) & 0xFFFF;
-      g_andData16[y * IMAGE_WIDTH + x] = ((x & y) * 256) & 0xFFFF;
-      g_checkerBoardData16[y * IMAGE_WIDTH + x] =
+      gMultiplyData16[y * IMAGE_WIDTH + x] = (x * y) & 0xFFFF;
+      gXorData16[y * IMAGE_WIDTH + x] = ((x ^ y) * 256) & 0xFFFF;
+      gOrData16[y * IMAGE_WIDTH + x] = ((x | y) * 256) & 0xFFFF;
+      gAndData16[y * IMAGE_WIDTH + x] = ((x & y) * 256) & 0xFFFF;
+      gCheckerBoardData16[y * IMAGE_WIDTH + x] =
           (x ~/ 8 + y ~/ 8) & 1 != 0 ? 65535 : 32768;
 
-      g_multiplyData32[y * IMAGE_WIDTH + x] = (1.0 / 65025.0) * (x * y);
-      g_xorData32[y * IMAGE_WIDTH + x] = (1.0 / 65025.0) * ((x ^ y) * 256);
-      g_orData32[y * IMAGE_WIDTH + x] = (1.0 / 65025.0) * ((x | y) * 256);
-      g_andData32[y * IMAGE_WIDTH + x] = (1.0 / 65025.0) * ((x & y) * 256);
-      g_checkerBoardData32[y * IMAGE_WIDTH + x] =
+      gMultiplyData32[y * IMAGE_WIDTH + x] = (1.0 / 65025.0) * (x * y);
+      gXorData32[y * IMAGE_WIDTH + x] = (1.0 / 65025.0) * ((x ^ y) * 256);
+      gOrData32[y * IMAGE_WIDTH + x] = (1.0 / 65025.0) * ((x | y) * 256);
+      gAndData32[y * IMAGE_WIDTH + x] = (1.0 / 65025.0) * ((x & y) * 256);
+      gCheckerBoardData32[y * IMAGE_WIDTH + x] =
           (x ~/ 8 + y ~/ 8) & 1 != 0 ? 1.0 : 0.5;
     }
   }
@@ -517,39 +513,39 @@ int sampleWritePsd() {
       // encodes the data, and then zips it. slowest to write, but also smallest
       // in size for most images.
       updateLayer(document, layer1, ExportChannel.RED, 0, 0, IMAGE_WIDTH,
-          IMAGE_HEIGHT, g_multiplyData, CompressionType.RAW);
+          IMAGE_HEIGHT, gMultiplyData, CompressionType.RAW);
       updateLayer(document, layer1, ExportChannel.GREEN, 0, 0, IMAGE_WIDTH,
-          IMAGE_HEIGHT, g_multiplyData, CompressionType.RAW);
+          IMAGE_HEIGHT, gMultiplyData, CompressionType.RAW);
       updateLayer(document, layer1, ExportChannel.BLUE, 0, 0, IMAGE_WIDTH,
-          IMAGE_HEIGHT, g_multiplyData, CompressionType.RAW);
+          IMAGE_HEIGHT, gMultiplyData, CompressionType.RAW);
 
       updateLayer(document, layer2, ExportChannel.RED, 0, 0, IMAGE_WIDTH,
-          IMAGE_HEIGHT, g_xorData, CompressionType.RAW);
+          IMAGE_HEIGHT, gXorData, CompressionType.RAW);
       updateLayer(document, layer2, ExportChannel.GREEN, 0, 0, IMAGE_WIDTH,
-          IMAGE_HEIGHT, g_xorData, CompressionType.RAW);
+          IMAGE_HEIGHT, gXorData, CompressionType.RAW);
       updateLayer(document, layer2, ExportChannel.BLUE, 0, 0, IMAGE_WIDTH,
-          IMAGE_HEIGHT, g_xorData, CompressionType.RAW);
+          IMAGE_HEIGHT, gXorData, CompressionType.RAW);
 
       updateLayer(document, layer3, ExportChannel.RED, 0, 0, IMAGE_WIDTH,
-          IMAGE_HEIGHT, g_multiplyData, CompressionType.RAW);
+          IMAGE_HEIGHT, gMultiplyData, CompressionType.RAW);
       updateLayer(document, layer3, ExportChannel.GREEN, 0, 0, IMAGE_WIDTH,
-          IMAGE_HEIGHT, g_xorData, CompressionType.RAW);
+          IMAGE_HEIGHT, gXorData, CompressionType.RAW);
       updateLayer(document, layer3, ExportChannel.BLUE, 0, 0, IMAGE_WIDTH,
-          IMAGE_HEIGHT, g_orData, CompressionType.RAW);
+          IMAGE_HEIGHT, gOrData, CompressionType.RAW);
 
       // note that transparency information is always supported, regardless of
       // the export color mode. it is saved as true transparency, and not as
       // separate alpha channel.
       updateLayer(document, layer1, ExportChannel.ALPHA, 0, 0, IMAGE_WIDTH,
-          IMAGE_HEIGHT, g_multiplyData, CompressionType.RAW);
+          IMAGE_HEIGHT, gMultiplyData, CompressionType.RAW);
       updateLayer(document, layer2, ExportChannel.ALPHA, 0, 0, IMAGE_WIDTH,
-          IMAGE_HEIGHT, g_xorData, CompressionType.RAW);
+          IMAGE_HEIGHT, gXorData, CompressionType.RAW);
       updateLayer(document, layer3, ExportChannel.ALPHA, 0, 0, IMAGE_WIDTH,
-          IMAGE_HEIGHT, g_orData, CompressionType.RAW);
+          IMAGE_HEIGHT, gOrData, CompressionType.RAW);
 
       // merged image data is optional. if none is provided, black channels will
       // be exported instead.
-      updateMergedImage(document, g_multiplyData, g_xorData, g_orData);
+      updateMergedImage(document, gMultiplyData, gXorData, gOrData);
 
       // when adding a channel to the document, you first need to get a new
       // index into the channel table. with a valid index, channels can be
@@ -558,22 +554,22 @@ int sampleWritePsd() {
       {
         final spotIndex = addAlphaChannel(
             document, 'Spot Red', 65535, 0, 0, 0, 100, AlphaChannelMode.SPOT);
-        updateChannel(document, spotIndex, g_multiplyData);
+        updateChannel(document, spotIndex, gMultiplyData);
       }
       {
         final spotIndex = addAlphaChannel(
             document, 'Spot Green', 0, 65535, 0, 0, 75, AlphaChannelMode.SPOT);
-        updateChannel(document, spotIndex, g_xorData);
+        updateChannel(document, spotIndex, gXorData);
       }
       {
         final spotIndex = addAlphaChannel(
             document, 'Spot Blue', 0, 0, 65535, 0, 50, AlphaChannelMode.SPOT);
-        updateChannel(document, spotIndex, g_orData);
+        updateChannel(document, spotIndex, gOrData);
       }
       {
         final spotIndex = addAlphaChannel(document, 'Mix', 20000, 50000, 30000,
             0, 100, AlphaChannelMode.SPOT);
-        updateChannel(document, spotIndex, g_orData);
+        updateChannel(document, spotIndex, gOrData);
       }
 
       writeDocument(document, file);
@@ -593,19 +589,19 @@ int sampleWritePsd() {
     {
       final layer1 = addLayer(document, 'MUL pattern');
       updateLayer(document, layer1, ExportChannel.GRAY, 0, 0, IMAGE_WIDTH,
-          IMAGE_HEIGHT, g_multiplyData16, CompressionType.RAW);
+          IMAGE_HEIGHT, gMultiplyData16, CompressionType.RAW);
 
       final layer2 = addLayer(document, 'XOR pattern');
       updateLayer(document, layer2, ExportChannel.GRAY, 0, 0, IMAGE_WIDTH,
-          IMAGE_HEIGHT, g_xorData16, CompressionType.RLE);
+          IMAGE_HEIGHT, gXorData16, CompressionType.RLE);
 
       final layer3 = addLayer(document, 'AND pattern');
       updateLayer(document, layer3, ExportChannel.GRAY, 0, 0, IMAGE_WIDTH,
-          IMAGE_HEIGHT, g_andData16, CompressionType.ZIP);
+          IMAGE_HEIGHT, gAndData16, CompressionType.ZIP);
 
       final layer4 = addLayer(document, 'OR pattern with transparency');
       updateLayer(document, layer4, ExportChannel.GRAY, 0, 0, IMAGE_WIDTH,
-          IMAGE_HEIGHT, g_orData16, CompressionType.ZIP_WITH_PREDICTION);
+          IMAGE_HEIGHT, gOrData16, CompressionType.ZIP_WITH_PREDICTION);
       updateLayer(
           document,
           layer4,
@@ -614,10 +610,10 @@ int sampleWritePsd() {
           0,
           IMAGE_WIDTH,
           IMAGE_HEIGHT,
-          g_checkerBoardData16,
+          gCheckerBoardData16,
           CompressionType.ZIP_WITH_PREDICTION);
 
-      updateMergedImage(document, g_multiplyData16, g_xorData16, g_andData16);
+      updateMergedImage(document, gMultiplyData16, gXorData16, gAndData16);
 
       writeDocument(document, file);
     }
@@ -635,24 +631,24 @@ int sampleWritePsd() {
     {
       final layer1 = addLayer(document, 'MUL pattern');
       updateLayer(document, layer1, ExportChannel.RED, 0, 0, IMAGE_WIDTH,
-          IMAGE_HEIGHT, g_multiplyData32, CompressionType.RAW);
+          IMAGE_HEIGHT, gMultiplyData32, CompressionType.RAW);
       updateLayer(document, layer1, ExportChannel.GREEN, 0, 0, IMAGE_WIDTH,
-          IMAGE_HEIGHT, g_multiplyData32, CompressionType.RLE);
+          IMAGE_HEIGHT, gMultiplyData32, CompressionType.RLE);
       updateLayer(document, layer1, ExportChannel.BLUE, 0, 0, IMAGE_WIDTH,
-          IMAGE_HEIGHT, g_multiplyData32, CompressionType.ZIP);
+          IMAGE_HEIGHT, gMultiplyData32, CompressionType.ZIP);
 
       final layer2 = addLayer(document, 'Mixed pattern with transparency');
       updateLayer(document, layer2, ExportChannel.RED, 0, 0, IMAGE_WIDTH,
-          IMAGE_HEIGHT, g_multiplyData32, CompressionType.RLE);
+          IMAGE_HEIGHT, gMultiplyData32, CompressionType.RLE);
       updateLayer(document, layer2, ExportChannel.GREEN, 0, 0, IMAGE_WIDTH,
-          IMAGE_HEIGHT, g_xorData32, CompressionType.ZIP);
+          IMAGE_HEIGHT, gXorData32, CompressionType.ZIP);
       updateLayer(document, layer2, ExportChannel.BLUE, 0, 0, IMAGE_WIDTH,
-          IMAGE_HEIGHT, g_orData32, CompressionType.ZIP_WITH_PREDICTION);
+          IMAGE_HEIGHT, gOrData32, CompressionType.ZIP_WITH_PREDICTION);
       updateLayer(document, layer2, ExportChannel.ALPHA, 0, 0, IMAGE_WIDTH,
-          IMAGE_HEIGHT, g_checkerBoardData32, CompressionType.RAW);
+          IMAGE_HEIGHT, gCheckerBoardData32, CompressionType.RAW);
 
       updateMergedImage(
-          document, g_multiplyData32, g_xorData32, g_checkerBoardData32);
+          document, gMultiplyData32, gXorData32, gCheckerBoardData32);
 
       writeDocument(document, file);
     }

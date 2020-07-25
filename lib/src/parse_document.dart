@@ -96,5 +96,3 @@ Document createDocument(File file) {
 
   return document;
 }
-
-void destroyDocument(Document document) {}

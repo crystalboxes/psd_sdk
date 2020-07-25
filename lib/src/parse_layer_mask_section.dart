@@ -174,10 +174,10 @@ LayerMaskSection parseLayer(Document document, SyncFileReader reader,
         toRead -= readMaskRectangle(reader, maskData[0]);
 
         maskData[0].defaultColor = reader.readByte();
-        toRead -= sizeof<uint8_t>();
+        toRead -= sizeof<Uint8T>();
 
         final maskFlags = reader.readByte();
-        toRead -= sizeof<uint8_t>();
+        toRead -= sizeof<Uint8T>();
 
         maskData[0].isVectorMask = (maskFlags & (1 << 3)) != 0;
         var maskHasParameters = (maskFlags & (1 << 4)) != 0;
@@ -193,10 +193,10 @@ LayerMaskSection parseLayer(Document document, SyncFileReader reader,
           maskCount = 2;
 
           final realFlags = reader.readByte();
-          toRead -= sizeof<uint8_t>();
+          toRead -= sizeof<Uint8T>();
 
           maskData[1].defaultColor = reader.readByte();
-          toRead -= sizeof<uint8_t>();
+          toRead -= sizeof<Uint8T>();
 
           toRead -= readMaskRectangle(reader, maskData[1]);
 
@@ -294,12 +294,12 @@ LayerMaskSection parseLayer(Document document, SyncFileReader reader,
 
           // skip possible padding bytes
           reader.skip(
-              length - 4 - characterCountWithoutNull * sizeof<uint16_t>());
+              length - 4 - characterCountWithoutNull * sizeof<Uint16T>());
         } else {
           reader.skip(length);
         }
 
-        toRead -= 3 * sizeof<uint32_t>() + length;
+        toRead -= 3 * sizeof<Uint32T>() + length;
       }
     }
 
@@ -327,7 +327,7 @@ LayerMaskSection parseLayer(Document document, SyncFileReader reader,
     if (sectionOffset + sectionLength > globalInfoSectionOffset) {
       var toRead = sectionOffset + sectionLength - globalInfoSectionOffset;
       final globalLayerMaskLength = reader.readUint32();
-      toRead -= sizeof<uint32_t>();
+      toRead -= sizeof<Uint32T>();
 
       if (globalLayerMaskLength != 0) {
         layerMaskSection.overlayColorSpace = reader.readUint16();
@@ -338,12 +338,12 @@ LayerMaskSection parseLayer(Document document, SyncFileReader reader,
         layerMaskSection.opacity = reader.readUint16();
         layerMaskSection.kind = reader.readByte();
 
-        toRead -= 2 * sizeof<uint16_t>() + sizeof<uint8_t>() + 8;
+        toRead -= 2 * sizeof<Uint16T>() + sizeof<Uint8T>() + 8;
 
         // filler bytes (zeroes)
         final remaining = globalLayerMaskLength -
-            2 * sizeof<uint16_t>() -
-            sizeof<uint8_t>() -
+            2 * sizeof<Uint16T>() -
+            sizeof<Uint8T>() -
             8;
         reader.skip(remaining);
 
@@ -389,7 +389,7 @@ LayerMaskSection parseLayer(Document document, SyncFileReader reader,
           reader.skip(length);
         }
 
-        toRead -= 3 * sizeof<uint32_t>() + length;
+        toRead -= 3 * sizeof<Uint32T>() + length;
       }
     }
   }
@@ -414,7 +414,7 @@ int readMaskRectangle(SyncFileReader reader, MaskData maskData) {
   maskData.bottom = reader.readInt32();
   maskData.right = reader.readInt32();
 
-  return 4 * sizeof<int32_t>();
+  return 4 * sizeof<Int32T>();
 }
 
 class Ref<T> {
@@ -442,14 +442,14 @@ void applyMaskData<T extends Mask>(
 // ---------------------------------------------------------------------------------------------------------------------
 int readMaskDensity(SyncFileReader reader, Ref<int> density) {
   density.set(reader.readByte());
-  return sizeof<uint8_t>();
+  return sizeof<Uint8T>();
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------------------------
 int readMaskFeather(SyncFileReader reader, Ref<double> feather) {
   feather.set(reader.readFloat64());
-  return sizeof<float64_t>();
+  return sizeof<Float64T>();
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -463,7 +463,7 @@ int readMaskParameters(
   var bytesRead = 0;
 
   final flags = reader.readByte();
-  bytesRead += sizeof<uint8_t>();
+  bytesRead += sizeof<Uint8T>();
 
   final hasUserDensity = (flags & (1 << 0)) != 0;
   final hasUserFeather = (flags & (1 << 1)) != 0;
@@ -623,24 +623,24 @@ void extractLayer(Document document, File file, Layer layer) {
     if (compressionType == CompressionType.RAW) {
       if (document.bitsPerChannel == 8) {
         channel.data =
-            readChannelDataRaw<uint8_t>(reader, width.value, height.value);
+            readChannelDataRaw<Uint8T>(reader, width.value, height.value);
       } else if (document.bitsPerChannel == 16) {
         channel.data =
-            readChannelDataRaw<uint16_t>(reader, width.value, height.value);
+            readChannelDataRaw<Uint16T>(reader, width.value, height.value);
       } else if (document.bitsPerChannel == 32) {
         channel.data =
-            readChannelDataRaw<float32_t>(reader, width.value, height.value);
+            readChannelDataRaw<Float32T>(reader, width.value, height.value);
       }
     } else if (compressionType == CompressionType.RLE) {
       if (document.bitsPerChannel == 8) {
         channel.data =
-            readChannelDataRLE<uint8_t>(reader, width.value, height.value);
+            readChannelDataRLE<Uint8T>(reader, width.value, height.value);
       } else if (document.bitsPerChannel == 16) {
         channel.data =
-            readChannelDataRLE<uint16_t>(reader, width.value, height.value);
+            readChannelDataRLE<Uint16T>(reader, width.value, height.value);
       } else if (document.bitsPerChannel == 32) {
         channel.data =
-            readChannelDataRLE<float32_t>(reader, width.value, height.value);
+            readChannelDataRLE<Float32T>(reader, width.value, height.value);
       }
     } else if (compressionType == CompressionType.ZIP) {
       // note that we need to subtract 2 bytes from the channel data size because we already read the uint16_t
@@ -648,15 +648,15 @@ void extractLayer(Document document, File file, Layer layer) {
       assert(channel.size >= 2, 'Invalid channel data size ${channel.size}');
       final channelDataSize = channel.size - 2;
       if (document.bitsPerChannel == 8) {
-        channel.data = readChannelDataZip<uint8_t>(
+        channel.data = readChannelDataZip<Uint8T>(
             reader, width.value, height.value, channelDataSize);
       } else if (document.bitsPerChannel == 16) {
-        channel.data = readChannelDataZip<uint16_t>(
+        channel.data = readChannelDataZip<Uint16T>(
             reader, width.value, height.value, channelDataSize);
       } else if (document.bitsPerChannel == 32) {
         // note that this is NOT a bug.
         // in 32-bit mode, Photoshop always interprets ZIP compression as being ZIP_WITH_PREDICTION, presumably to get better compression when writing files.
-        channel.data = readChannelDataZipPrediction<float32_t>(
+        channel.data = readChannelDataZipPrediction<Float32T>(
             reader, width.value, height.value, channelDataSize);
       }
     } else if (compressionType == CompressionType.ZIP_WITH_PREDICTION) {
@@ -665,13 +665,13 @@ void extractLayer(Document document, File file, Layer layer) {
       assert(channel.size >= 2, 'Invalid channel data size ${channel.size}');
       final channelDataSize = channel.size - 2;
       if (document.bitsPerChannel == 8) {
-        channel.data = readChannelDataZipPrediction<uint8_t>(
+        channel.data = readChannelDataZipPrediction<Uint8T>(
             reader, width.value, height.value, channelDataSize);
       } else if (document.bitsPerChannel == 16) {
-        channel.data = readChannelDataZipPrediction<uint16_t>(
+        channel.data = readChannelDataZipPrediction<Uint16T>(
             reader, width.value, height.value, channelDataSize);
       } else if (document.bitsPerChannel == 32) {
-        channel.data = readChannelDataZipPrediction<float32_t>(
+        channel.data = readChannelDataZipPrediction<Float32T>(
             reader, width.value, height.value, channelDataSize);
       }
     } else {
