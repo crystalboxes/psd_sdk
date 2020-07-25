@@ -575,7 +575,7 @@ int sampleWritePsd() {
       writeDocument(document, file);
     }
 
-    io.File(dstPath).writeAsBytesSync(file.buffer.asUint8List());
+    io.File(dstPath).writeAsBytesSync(file.bytes);
   }
   {
     final dstPath = '${getSampleOutputPath()}SampleWrite_16.psd';
@@ -618,7 +618,7 @@ int sampleWritePsd() {
       writeDocument(document, file);
     }
 
-    io.File(dstPath).writeAsBytesSync(file.buffer.asUint8List());
+    io.File(dstPath).writeAsBytesSync(file.bytes);
   }
   {
     final dstPath = '${getSampleOutputPath()}SampleWrite_32.psd';
@@ -653,7 +653,7 @@ int sampleWritePsd() {
       writeDocument(document, file);
     }
 
-    io.File(dstPath).writeAsBytesSync(file.buffer.asUint8List());
+    io.File(dstPath).writeAsBytesSync(file.bytes);
   }
 
   return 0;

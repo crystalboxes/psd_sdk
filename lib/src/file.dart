@@ -9,8 +9,8 @@ class File {
   Uint8List _uint8list;
   ByteData _byteData;
 
+  Uint8List get bytes => _uint8list;
   ByteBuffer get buffer => _uint8list.buffer;
-
   ByteData get byteData => _byteData;
 
   int getSize() => _uint8list.length;
