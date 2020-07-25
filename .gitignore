@@ -13,3 +13,6 @@ build/
 doc/api/
 
 .vscode
+
+example/sample_output/*
+!example/sample_output/.gitkeep

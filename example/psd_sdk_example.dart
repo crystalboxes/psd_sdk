@@ -22,7 +22,7 @@ String getSampleInputPath() {
 }
 
 String getSampleOutputPath() {
-  return 'example/';
+  return 'example/sample_output/';
 }
 
 Uint8List expandChannelToCanvas<T extends NumDataType>(
@@ -102,7 +102,6 @@ int sampleReadPsd() {
   final document = createDocument(file);
   if (document == null) {
     print('Cannot create document.');
-    file.close();
     return 1;
   }
 
@@ -110,7 +109,6 @@ int sampleReadPsd() {
   if (document.colorMode != ColorMode.RGB) {
     print('Document is not in RGB color mode.\n');
     destroyDocument(document);
-    file.close();
     return 1;
   }
 
@@ -429,7 +427,6 @@ int sampleReadPsd() {
 
     // don't forget to destroy the document, and close the file.
     destroyDocument(document);
-    file.close();
   }
   return 0;
 }
@@ -492,12 +489,6 @@ int sampleWritePsd() {
     final dstPath = '${getSampleOutputPath()}SampleWrite_8.psd';
 
     var file = File();
-
-    // try opening the file. if it fails, bail out.
-    // if (!file.OpenWrite(dstPath.c_str())) {
-    //   OutputDebugStringA("Cannot open file.\n");
-    //   return 1;
-    // }
 
     // write an RGB PSD file, 8-bit
     var document =
@@ -589,18 +580,11 @@ int sampleWritePsd() {
     }
 
     io.File(dstPath).writeAsBytesSync(file.buffer.asUint8List());
-    file.close();
   }
   {
     final dstPath = '${getSampleOutputPath()}SampleWrite_16.psd';
 
     var file = File();
-
-    // // try opening the file. if it fails, bail out.
-    // if (!file.OpenWrite(dstPath.c_str())) {
-    //   OutputDebugStringA("Cannot open file.\n");
-    //   return 1;
-    // }
 
     // write a Grayscale PSD file, 16-bit.
     // Grayscale works similar to RGB, only the types of export channels change.
@@ -639,19 +623,11 @@ int sampleWritePsd() {
     }
 
     io.File(dstPath).writeAsBytesSync(file.buffer.asUint8List());
-
-    file.close();
   }
   {
-    final dstPath = 'GetSampleOutputPath()SampleWrite_32.psd';
+    final dstPath = '${getSampleOutputPath()}SampleWrite_32.psd';
 
     var file = File();
-
-    // try opening the file. if it fails, bail out.
-    // if (!file.OpenWrite(dstPath.c_str())) {
-    //   OutputDebugStringA("Cannot open file.\n");
-    //   return 1;
-    // }
 
     // write an RGB PSD file, 32-bit
     var document = createExportDocument(
@@ -682,13 +658,12 @@ int sampleWritePsd() {
     }
 
     io.File(dstPath).writeAsBytesSync(file.buffer.asUint8List());
-    file.close();
   }
 
   return 0;
 }
 
 void main() {
-  // sampleReadPsd();
+  sampleReadPsd();
   sampleWritePsd();
 }

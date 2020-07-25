@@ -1,5 +1,3 @@
-// ---------------------------------------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------------------------------
 import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
@@ -49,17 +47,7 @@ int addMetaData(ExportDocument document, String name, String value) {
   return index;
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------------------------------
 String CreateString(String str) {
-  // final length = str.length;
-  // final paddedLength = roundUpToMultiple(length + 1, 4);
-  // final newString = Uint8List(paddedLength);
-  // for (var x = 0; x < length; x++) {
-  //   newString[x] = str.codeUnitAt(x);
-  // }
-
-  // return newString;
   return str;
 }
 
@@ -79,8 +67,6 @@ int addLayer(ExportDocument document, String name) {
   return index;
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------------------------------
 int getChannelIndex(int channel) {
   switch (channel) {
     case ExportChannel.GRAY:
@@ -151,13 +137,6 @@ void UpdateLayerImpl<T extends NumDataType>(
 
   final layer = document.layers[layerIndex];
   final channelIndex = getChannelIndex(channel);
-
-  // free old data
-  {
-    if (layer.channelData != null) {
-      layer.channelData = List(ExportLayer.MAX_CHANNEL_COUNT);
-    }
-  }
 
   // prepare new data
   layer.top = top;
@@ -243,7 +222,7 @@ void CreateDataZipPredictionF32(ExportLayer layer, int channelIndex,
   for (var y = 0; y < height; ++y) {
     for (var x = 0; x < width; ++x) {
       var asBytes = ByteData(sizeof<float32_t>());
-      asBytes.setFloat32(0, planarData[y * width + x]);
+      asBytes.setFloat32(0, planarData[y * width + x], Endian.host);
       bigEndianPlanarData[y * width * sizeof<float32_t>() + x + width * 0] =
           asBytes.getUint8(3);
       bigEndianPlanarData[y * width * sizeof<float32_t>() + x + width * 1] =
