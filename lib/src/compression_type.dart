@@ -1,3 +1,4 @@
+/// A class holding compression types known by Photoshop.
 class CompressionType {
   /// Raw data.
   static const RAW = 0;

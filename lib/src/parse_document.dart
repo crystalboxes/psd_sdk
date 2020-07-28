@@ -5,6 +5,7 @@ import 'package:psd_sdk/src/sync_file_reader.dart';
 import 'document.dart';
 import 'file.dart';
 
+/// Parses only the header and section offsets, and returns a newly created document.
 Document createDocument(File file) {
   final reader = SyncFileReader(file);
   reader.setPosition(0);

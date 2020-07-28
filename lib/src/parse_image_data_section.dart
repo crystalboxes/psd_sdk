@@ -10,6 +10,9 @@ import 'file.dart';
 import 'image_data_section.dart';
 import 'sync_file_reader.dart';
 
+/// Parses the image data section in the document, and returns a newly created instance.
+/// It is valid to parse different sections of a document (e.g. using parseImageResourcesSection, parseImageDataSection,
+/// or parseLayerMaskSection) in parallel from different threads.
 ImageDataSection parseImageDataSection(Document document, File file) {
   // this is the merged image. it is only stored if "maximize compatibility" is turned on when saving a PSD file.
   // image data is stored in planar order: first red data, then green data, and so on.

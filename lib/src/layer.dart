@@ -43,7 +43,7 @@ class Layer implements LayerRect {
   /// The layer's vector mask, if any.
   VectorMask vectorMask;
 
-  /// The key denoting the layer's blend mode. Can be any key described in \ref blendMode::Enum.
+  /// The key denoting the layer's blend mode. Can be any key described in blendMode::Enum.
   int blendModeKey;
 
   /// The layer's opacity value, with the range [0, 255] mapped to [0%, 100%].
@@ -52,7 +52,7 @@ class Layer implements LayerRect {
   /// The layer's clipping mode (not used yet).
   int clipping;
 
-  /// The layer's type. Can be any of \ref layerType::Enum.
+  /// The layer's type. Can be any of layerType::Enum.
   int type;
 
   /// The layer's visibility.

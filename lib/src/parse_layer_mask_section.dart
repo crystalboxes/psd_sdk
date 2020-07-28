@@ -19,6 +19,11 @@ import 'layer_mask_section.dart';
 import 'layer_type.dart';
 import 'sync_file_reader.dart';
 
+/// Parses the layer mask section in the document, and returns a newly created instance.
+/// This function does not extract layer data yet, that has to be done
+/// by a call to ExtractLayer for each layer.
+/// It is valid to parse different sections of a document (e.g. using parseImageResourcesSection, parseImageDataSection,
+/// or parseLayerMaskSection) in parallel from different threads.
 LayerMaskSection parseLayerMaskSection(Document document, File file) {
   // if there are no layers or masks, this section is just 4 bytes: the length field, which is set to zero.
   final section = document.layerMaskInfoSection;
@@ -369,12 +374,10 @@ LayerMaskSection _parseLayer(Document document, SyncFileReader reader,
 
         if (key == keyValue('Lr16')) {
           final offset = reader.getPosition();
-          destroyLayerMaskSection(layerMaskSection);
           layerMaskSection = _parseLayer(document, reader, 0, 0, length);
           reader.setPosition(offset + length);
         } else if (key == keyValue('Lr32')) {
           final offset = reader.getPosition();
-          destroyLayerMaskSection(layerMaskSection);
           layerMaskSection = _parseLayer(document, reader, 0, 0, length);
           reader.setPosition(offset + length);
         } else if (key == keyValue('vmsk')) {
@@ -474,8 +477,6 @@ int _readMaskParameters(
 
   return bytesRead;
 }
-
-void destroyLayerMaskSection(LayerMaskSection section) {}
 
 Uint8List _endianConvert<T extends NumDataType>(Uint8List src, width, height) {
   var byteData = src.buffer.asByteData();
@@ -583,6 +584,8 @@ void _applyPrediction<T extends NumDataType>(
   assert(sizeof<T>() == -1, 'Unknown data type.');
 }
 
+/// Extracts data for a given layer.
+/// It is valid and suggested to extract the data of individual layers from multiple threads in parallel.
 void extractLayer(Document document, File file, Layer layer) {
   var reader = SyncFileReader(file);
 

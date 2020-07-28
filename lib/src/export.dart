@@ -16,6 +16,7 @@ import 'export_metadata_attribute.dart';
 import 'image_resource_type.dart';
 import 'key.dart';
 
+/// Creates a new document suited for exporting a PSD file.
 ExportDocument createExportDocument(
     int canvasWidth, int canvasHeight, int bitsPerChannel, int colorMode) {
   var document = ExportDocument();
@@ -39,6 +40,8 @@ ExportDocument createExportDocument(
   return document;
 }
 
+/// Adds meta data to a document. The contents of name and value are copied. The returned index can be used to update existing meta data
+/// by a call to UpdateMetaData.
 int addMetaData(ExportDocument document, String name, String value) {
   final index = document.attributeCount;
   document.attributes.add(ExportMetaDataAttribute());
@@ -47,6 +50,7 @@ int addMetaData(ExportDocument document, String name, String value) {
   return index;
 }
 
+/// Adds a layer to a document. The returned index can be used to update layer data by a call to updateLayer.
 int addLayer(ExportDocument document, String name) {
   final index = document.layerCount;
   document.layers.add(ExportLayer());
@@ -56,6 +60,9 @@ int addLayer(ExportDocument document, String name) {
   return index;
 }
 
+/// Updates a layer with planar data. The function internally takes ownership over all data, so planar image data passed to this function can be freed afterwards.
+/// Planar data must hold "width*height" bytes, where width = right - left and height = botttom - top.
+/// Note that individual layers can be smaller and/or larger than the canvas in PSD documents.
 void updateLayer<T extends TypedData>(
     ExportDocument document,
     int layerIndex,
@@ -80,6 +87,7 @@ void updateLayer<T extends TypedData>(
   }
 }
 
+/// Adds an alpha channel to a document. The returned index can be used to update channel data by a call to updateChannel.
 int addAlphaChannel(ExportDocument document, String name, int r, int g, int b,
     int a, int opacity, int mode) {
   final index = document.alphaChannelCount;
@@ -98,6 +106,9 @@ int addAlphaChannel(ExportDocument document, String name, int r, int g, int b,
   return index;
 }
 
+/// Updates a layer with planar 32-bit data. The function internally takes ownership over all data, so planar image data passed to this function can be freed afterwards.
+/// Planar data must hold "width*height*4" bytes, where width = right - left and height = botttom - top.
+/// Note that individual layers can be smaller and/or larger than the canvas in PSD documents.
 void updateChannel(ExportDocument document, int channelIndex, TypedData data) {
   if (data is Uint8List) {
     _updateChannelImpl<Uint8T>(document, channelIndex, data);
@@ -110,258 +121,8 @@ void updateChannel(ExportDocument document, int channelIndex, TypedData data) {
   }
 }
 
-String _createString(String str) {
-  return str;
-}
-
-void _updateMetaData(
-    ExportDocument document, int index, String name, String value) {
-  var attribute = document.attributes[index];
-  attribute.name = _createString(name);
-  attribute.value = _createString(value);
-}
-
-int _getChannelIndex(int channel) {
-  switch (channel) {
-    case ExportChannel.GRAY:
-      return 0;
-
-    case ExportChannel.RED:
-      return 0;
-
-    case ExportChannel.GREEN:
-      return 1;
-
-    case ExportChannel.BLUE:
-      return 2;
-
-    case ExportChannel.ALPHA:
-      return 3;
-
-    default:
-      return 0;
-  }
-}
-
-void _updateLayerImpl<T extends NumDataType>(
-    ExportDocument document,
-    int layerIndex,
-    int channel,
-    int left,
-    int top,
-    int right,
-    int bottom,
-    TypedData planarData,
-    int compression) {
-  if (document.colorMode == ExportColorMode.GRAYSCALE) {
-    assert((channel == ExportChannel.GRAY) || (channel == ExportChannel.ALPHA),
-        'Wrong channel for this color mode.');
-  } else if (document.colorMode == ExportColorMode.RGB) {
-    assert(
-        (channel == ExportChannel.RED) ||
-            (channel == ExportChannel.GREEN) ||
-            (channel == ExportChannel.BLUE) ||
-            (channel == ExportChannel.ALPHA),
-        'Wrong channel for this color mode.');
-  }
-
-  final layer = document.layers[layerIndex];
-  final channelIndex = _getChannelIndex(channel);
-
-  // prepare new data
-  layer.top = top;
-  layer.left = left;
-  layer.bottom = bottom;
-  layer.right = right;
-  layer.channelCompression[channelIndex] = (compression);
-
-  assert(right >= left, 'Invalid layer bounds.');
-  assert(bottom >= top, 'Invalid layer bounds.');
-  final width = (right - left);
-  final height = (bottom - top);
-
-  if (compression == CompressionType.RAW) {
-    // raw data, copy directly and convert to big endian
-    _createDataRaw<T>(layer, channelIndex, planarData, width, height);
-  } else if (compression == CompressionType.RLE) {
-    // compress with RLE
-    _createDataRLE<T>(layer, channelIndex, planarData, width, height);
-  } else if (compression == CompressionType.ZIP) {
-    // compress with ZIP
-    // note that this has a template specialization for 32-bit float data that forwards to ZipWithPrediction.
-    if (T == Float32T) {
-      _createDataZipPredictionF32(
-          layer, channelIndex, planarData, width, height);
-    } else {
-      _createDataZip<T>(layer, channelIndex, planarData, width, height);
-    }
-  } else if (compression == CompressionType.ZIP_WITH_PREDICTION) {
-    if (T == Float32T) {
-      _createDataZipPredictionF32(
-          layer, channelIndex, planarData, width, height);
-    } else {
-      // delta-encode, then compress with ZIP
-      _createDataZipPrediction<T>(
-          layer, channelIndex, planarData, width, height);
-    }
-  }
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------------------------------
-void _createDataZipPrediction<T extends NumDataType>(ExportLayer layer,
-    int channelIndex, TypedData planarData, int width, int height) {
-  final size = width * height;
-
-  var deltaData = getTypedList<T>(Uint8List(size * sizeof<T>())) as List;
-  var allocation = deltaData;
-
-  var deltaDataPos = 0;
-  var planarDataPos = 0;
-  for (var y = 0; y < height; ++y) {
-    deltaData[deltaDataPos++] = (planarData as List)[planarDataPos++];
-    for (var x = 1; x < width; ++x) {
-      final previous = (planarData as List)[planarDataPos - 1];
-      final current = (planarData as List)[planarDataPos + 0];
-      final value = current - previous;
-
-      deltaData[deltaDataPos++] = (value & (T is Uint8T ? 0xFF : 0xFFFF));
-      ++planarDataPos;
-    }
-  }
-
-  // convert to big endian
-  for (var i = 0; i < size; ++i) {
-    allocation[i] = nativeToBigEndian<T>(allocation[i]);
-  }
-
-  Uint8List zipData = ZLibEncoder().encode(allocation);
-
-  layer.channelData[channelIndex] = zipData;
-  layer.channelSize[channelIndex] = zipData.length;
-}
-
-void _createDataZipPredictionF32(ExportLayer layer, int channelIndex,
-    Float32List planarData, int width, int height) {
-  final size = width * height;
-
-  // float data is first converted into planar data to allow for better compression.
-  // this is done row by row, so if the bytes of the floats in a row consist of "1234123412341234" they will be turned into "1111222233334444".
-  // the data is also converted to big-endian in the same loop.
-  var bigEndianPlanarData = Uint8List(size * sizeof<Float32T>());
-  for (var y = 0; y < height; ++y) {
-    for (var x = 0; x < width; ++x) {
-      var asBytes = ByteData(sizeof<Float32T>());
-      asBytes.setFloat32(0, planarData[y * width + x], Endian.host);
-      bigEndianPlanarData[y * width * sizeof<Float32T>() + x + width * 0] =
-          asBytes.getUint8(3);
-      bigEndianPlanarData[y * width * sizeof<Float32T>() + x + width * 1] =
-          asBytes.getUint8(2);
-      bigEndianPlanarData[y * width * sizeof<Float32T>() + x + width * 2] =
-          asBytes.getUint8(1);
-      bigEndianPlanarData[y * width * sizeof<Float32T>() + x + width * 3] =
-          asBytes.getUint8(0);
-    }
-  }
-
-  // now delta encode the individual bytes row by row
-  var deltaData = Uint8List(size * sizeof<Float32T>());
-  for (var y = 0; y < height; ++y) {
-    deltaData[y * width * sizeof<Float32T>()] =
-        bigEndianPlanarData[y * width * sizeof<Float32T>()];
-    for (var x = 1; x < width * 4; ++x) {
-      final previous =
-          bigEndianPlanarData[y * width * sizeof<Float32T>() + x - 1];
-      final current = bigEndianPlanarData[y * width * sizeof<Float32T>() + x];
-      final value = current - previous;
-
-      deltaData[y * width * sizeof<Float32T>() + x] = (value & 0xFF);
-    }
-  }
-
-  Uint8List zipData = ZLibEncoder().encode(deltaData);
-
-  layer.channelData[channelIndex] = zipData;
-  layer.channelSize[channelIndex] = zipData.length;
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------------------------------
-void _createDataZip<T extends NumDataType>(ExportLayer layer, int channelIndex,
-    TypedData planarData, int width, int height) {
-  final size = width * height;
-
-  var bigEndianData = getTypedList<T>(Uint8List(size * sizeof<T>())) as List;
-
-  for (var i = 0; i < size; ++i) {
-    bigEndianData[i] = nativeToBigEndian<T>((planarData as List)[i]);
-  }
-
-  Uint8List zipData =
-      ZLibEncoder().encode((bigEndianData as TypedData).buffer.asUint8List());
-
-  layer.channelData[channelIndex] = zipData;
-  layer.channelSize[channelIndex] = zipData.length;
-}
-
-void _createDataRaw<T extends NumDataType>(ExportLayer layer, int channelIndex,
-    TypedData planarData, int width, int height) {
-  final size = width * height;
-
-  final elemSize = sizeof<T>();
-  final bigEndianDataList = Uint8List(size * elemSize);
-  final bigEndianData = getTypedList<T>(bigEndianDataList) as List;
-  final srcByteData = planarData.buffer.asByteData();
-
-  for (var i = 0; i < size; ++i) {
-    bigEndianData[i] = getElemEndian<T>(srcByteData, i * elemSize, Endian.big);
-  }
-
-  layer.channelData[channelIndex] = bigEndianDataList;
-  layer.channelSize[channelIndex] = size * elemSize;
-}
-
-void _createDataRLE<T extends NumDataType>(ExportLayer layer, int channelIndex,
-    TypedData planarData, int width, int height) {
-  final size = width * height;
-
-  // each row needs two additional bytes for storing the size of the row's data.
-  // we pack the data row by row, and copy it into the final buffer.
-  var rleData = Uint8List(height * sizeof<Uint16T>() + size * sizeof<T>() * 2);
-
-  var rleRowData = Uint8List(width * sizeof<T>() * 2);
-  var bigEndianRowData = getTypedList<T>(Uint8List(width * sizeof<T>()));
-
-  var offset = 0;
-  for (var y = 0; y < height; ++y) {
-    for (var x = 0; x < width; ++x) {
-      (bigEndianRowData as List)[x] = getElemEndian<T>(
-          planarData.buffer.asByteData(),
-          (y * width + x) * sizeof<T>(),
-          Endian.big);
-    }
-
-    var compressedSize = compressRle(
-        bigEndianRowData.buffer.asUint8List(), rleRowData, width * sizeof<T>());
-    assert(compressedSize <= width * sizeof<T>() * 2,
-        'RLE compressed data doesn\'t fit into provided buffer.');
-
-    // copy 2 bytes row size, and copy RLE data
-    rleData.buffer
-        .asByteData()
-        .setUint16(y * sizeof<Uint16T>(), compressedSize, Endian.big);
-
-    for (var i = 0; i < compressedSize; i++) {
-      rleData[i + height * sizeof<Uint16T>() + offset] = rleRowData[i];
-    }
-
-    offset += compressedSize;
-  }
-
-  layer.channelData[channelIndex] = rleData;
-  layer.channelSize[channelIndex] = offset + height * sizeof<Uint16T>();
-}
-
+/// Updates the merged image data.
+/// Planar data must hold width*height bytes.
 void updateMergedImage(ExportDocument document, TypedData planarDataR,
     TypedData planarDataG, TypedData planarDataB) {
   if (planarDataR is Uint8List) {
@@ -378,66 +139,7 @@ void updateMergedImage(ExportDocument document, TypedData planarDataR,
   }
 }
 
-void _updateMergedImageImpl<T extends NumDataType>(ExportDocument document,
-    TypedData planarDataR, TypedData planarDataG, TypedData planarDataB) {
-  // free old data
-
-  // copy raw data
-  final size = document.width * document.height;
-  var memoryR = getTypedList<T>(Uint8List(size * sizeof<T>())) as List;
-  var memoryG = getTypedList<T>(Uint8List(size * sizeof<T>())) as List;
-  var memoryB = getTypedList<T>(Uint8List(size * sizeof<T>())) as List;
-  for (var i = 0; i < size; ++i) {
-    memoryR[i] = nativeToBigEndian<T>((planarDataR as List)[i]);
-    memoryG[i] = nativeToBigEndian<T>((planarDataG as List)[i]);
-    memoryB[i] = nativeToBigEndian<T>((planarDataB as List)[i]);
-  }
-  document.mergedImageData[0] = (memoryR as TypedData).buffer.asUint8List();
-  document.mergedImageData[1] = (memoryG as TypedData).buffer.asUint8List();
-  document.mergedImageData[2] = (memoryB as TypedData).buffer.asUint8List();
-}
-
-const _XMP_HEADER = '''<x:xmpmeta xmlns:x = "adobe:ns:meta/">
-		<rdf:RDF xmlns:rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns#">
-		<rdf:Description rdf:about=""
-		xmlns:xmp = "http://ns.adobe.com/xap/1.0/"
-		xmlns:dc = "http://purl.org/dc/elements/1.1/"
-		xmlns:photoshop = "http://ns.adobe.com/photoshop/1.0/"
-		xmlns:xmpMM = "http://ns.adobe.com/xap/1.0/mm/"
-		xmlns:stEvt = "http://ns.adobe.com/xap/1.0/sType/ResourceEvent#">''';
-
-const _XMP_FOOTER = '''</rdf:Description>\n
-		</rdf:RDF>\n
-		</x:xmpmeta>\n''';
-
-// ---------------------------------------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------------------------------
-void _updateChannelImpl<T extends NumDataType>(
-    ExportDocument document, int channelIndex, TypedData data) {
-  // free old data
-
-  // copy raw data
-  var size = document.width * document.height;
-  var channelData = getTypedList<T>(Uint8List(size * sizeof<T>())) as List;
-  for (var i = 0; i < size; ++i) {
-    channelData[i] = nativeToBigEndian<T>((data as List)[i]);
-  }
-  document.alphaChannelData[channelIndex] = channelData;
-}
-
-int _getMetaDataResourceSize(ExportDocument document) {
-  var metaDataSize = _XMP_HEADER.length;
-  for (var i = 0; i < document.attributeCount; ++i) {
-    metaDataSize += ('<xmp:>').length;
-    metaDataSize += (document.attributes[i].name.length) * 2;
-    metaDataSize += (document.attributes[i].value).length;
-    metaDataSize += ('</xmp:>\n').length;
-  }
-  metaDataSize += _XMP_FOOTER.length;
-
-  return metaDataSize;
-}
-
+/// Exports a document to the given file.
 void writeDocument(ExportDocument document, File file) {
   var writer = SyncFileWriter(file);
 
@@ -544,7 +246,7 @@ void writeDocument(ExportDocument document, File file) {
     if (hasImageResources) {
       final metaDataSize = hasMetaData ? _getMetaDataResourceSize(document) : 0;
       final iccProfileSize =
-          hasIccProfile ? getIccProfileResourceSize(document) : 0;
+          hasIccProfile ? _getIccProfileResourceSize(document) : 0;
       final exifDataSize = hasExifData ? _getExifDataResourceSize(document) : 0;
       final thumbnailSize =
           hasThumbnail ? _getThumbnailResourceSize(document) : 0;
@@ -806,7 +508,7 @@ void writeDocument(ExportDocument document, File file) {
     _writeToFileBE<Int32T>(writer, layer.bottom);
     _writeToFileBE<Int32T>(writer, layer.right);
 
-    final channelCount = getChannelCount(layer);
+    final channelCount = _getChannelCount(layer);
     _writeToFileBE<Uint16T>(writer, channelCount);
 
     // per-channel info
@@ -908,6 +610,312 @@ void writeDocument(ExportDocument document, File file) {
   writer.save();
 }
 
+String _createString(String str) {
+  return str;
+}
+
+void _updateMetaData(
+    ExportDocument document, int index, String name, String value) {
+  var attribute = document.attributes[index];
+  attribute.name = _createString(name);
+  attribute.value = _createString(value);
+}
+
+int _getChannelIndex(int channel) {
+  switch (channel) {
+    case ExportChannel.GRAY:
+      return 0;
+
+    case ExportChannel.RED:
+      return 0;
+
+    case ExportChannel.GREEN:
+      return 1;
+
+    case ExportChannel.BLUE:
+      return 2;
+
+    case ExportChannel.ALPHA:
+      return 3;
+
+    default:
+      return 0;
+  }
+}
+
+void _updateLayerImpl<T extends NumDataType>(
+    ExportDocument document,
+    int layerIndex,
+    int channel,
+    int left,
+    int top,
+    int right,
+    int bottom,
+    TypedData planarData,
+    int compression) {
+  if (document.colorMode == ExportColorMode.GRAYSCALE) {
+    assert((channel == ExportChannel.GRAY) || (channel == ExportChannel.ALPHA),
+        'Wrong channel for this color mode.');
+  } else if (document.colorMode == ExportColorMode.RGB) {
+    assert(
+        (channel == ExportChannel.RED) ||
+            (channel == ExportChannel.GREEN) ||
+            (channel == ExportChannel.BLUE) ||
+            (channel == ExportChannel.ALPHA),
+        'Wrong channel for this color mode.');
+  }
+
+  final layer = document.layers[layerIndex];
+  final channelIndex = _getChannelIndex(channel);
+
+  // prepare new data
+  layer.top = top;
+  layer.left = left;
+  layer.bottom = bottom;
+  layer.right = right;
+  layer.channelCompression[channelIndex] = (compression);
+
+  assert(right >= left, 'Invalid layer bounds.');
+  assert(bottom >= top, 'Invalid layer bounds.');
+  final width = (right - left);
+  final height = (bottom - top);
+
+  if (compression == CompressionType.RAW) {
+    // raw data, copy directly and convert to big endian
+    _createDataRaw<T>(layer, channelIndex, planarData, width, height);
+  } else if (compression == CompressionType.RLE) {
+    // compress with RLE
+    _createDataRLE<T>(layer, channelIndex, planarData, width, height);
+  } else if (compression == CompressionType.ZIP) {
+    // compress with ZIP
+    // note that this has a template specialization for 32-bit float data that forwards to ZipWithPrediction.
+    if (T == Float32T) {
+      _createDataZipPredictionF32(
+          layer, channelIndex, planarData, width, height);
+    } else {
+      _createDataZip<T>(layer, channelIndex, planarData, width, height);
+    }
+  } else if (compression == CompressionType.ZIP_WITH_PREDICTION) {
+    if (T == Float32T) {
+      _createDataZipPredictionF32(
+          layer, channelIndex, planarData, width, height);
+    } else {
+      // delta-encode, then compress with ZIP
+      _createDataZipPrediction<T>(
+          layer, channelIndex, planarData, width, height);
+    }
+  }
+}
+
+void _createDataZipPrediction<T extends NumDataType>(ExportLayer layer,
+    int channelIndex, TypedData planarData, int width, int height) {
+  final size = width * height;
+
+  var deltaData = getTypedList<T>(Uint8List(size * sizeof<T>())) as List;
+  var allocation = deltaData;
+
+  var deltaDataPos = 0;
+  var planarDataPos = 0;
+  for (var y = 0; y < height; ++y) {
+    deltaData[deltaDataPos++] = (planarData as List)[planarDataPos++];
+    for (var x = 1; x < width; ++x) {
+      final previous = (planarData as List)[planarDataPos - 1];
+      final current = (planarData as List)[planarDataPos + 0];
+      final value = current - previous;
+
+      deltaData[deltaDataPos++] = (value & (T is Uint8T ? 0xFF : 0xFFFF));
+      ++planarDataPos;
+    }
+  }
+
+  // convert to big endian
+  for (var i = 0; i < size; ++i) {
+    allocation[i] = nativeToBigEndian<T>(allocation[i]);
+  }
+
+  Uint8List zipData = ZLibEncoder().encode(allocation);
+
+  layer.channelData[channelIndex] = zipData;
+  layer.channelSize[channelIndex] = zipData.length;
+}
+
+void _createDataZipPredictionF32(ExportLayer layer, int channelIndex,
+    Float32List planarData, int width, int height) {
+  final size = width * height;
+
+  // float data is first converted into planar data to allow for better compression.
+  // this is done row by row, so if the bytes of the floats in a row consist of "1234123412341234" they will be turned into "1111222233334444".
+  // the data is also converted to big-endian in the same loop.
+  var bigEndianPlanarData = Uint8List(size * sizeof<Float32T>());
+  for (var y = 0; y < height; ++y) {
+    for (var x = 0; x < width; ++x) {
+      var asBytes = ByteData(sizeof<Float32T>());
+      asBytes.setFloat32(0, planarData[y * width + x], Endian.host);
+      bigEndianPlanarData[y * width * sizeof<Float32T>() + x + width * 0] =
+          asBytes.getUint8(3);
+      bigEndianPlanarData[y * width * sizeof<Float32T>() + x + width * 1] =
+          asBytes.getUint8(2);
+      bigEndianPlanarData[y * width * sizeof<Float32T>() + x + width * 2] =
+          asBytes.getUint8(1);
+      bigEndianPlanarData[y * width * sizeof<Float32T>() + x + width * 3] =
+          asBytes.getUint8(0);
+    }
+  }
+
+  // now delta encode the individual bytes row by row
+  var deltaData = Uint8List(size * sizeof<Float32T>());
+  for (var y = 0; y < height; ++y) {
+    deltaData[y * width * sizeof<Float32T>()] =
+        bigEndianPlanarData[y * width * sizeof<Float32T>()];
+    for (var x = 1; x < width * 4; ++x) {
+      final previous =
+          bigEndianPlanarData[y * width * sizeof<Float32T>() + x - 1];
+      final current = bigEndianPlanarData[y * width * sizeof<Float32T>() + x];
+      final value = current - previous;
+
+      deltaData[y * width * sizeof<Float32T>() + x] = (value & 0xFF);
+    }
+  }
+
+  Uint8List zipData = ZLibEncoder().encode(deltaData);
+
+  layer.channelData[channelIndex] = zipData;
+  layer.channelSize[channelIndex] = zipData.length;
+}
+
+void _createDataZip<T extends NumDataType>(ExportLayer layer, int channelIndex,
+    TypedData planarData, int width, int height) {
+  final size = width * height;
+
+  var bigEndianData = getTypedList<T>(Uint8List(size * sizeof<T>())) as List;
+
+  for (var i = 0; i < size; ++i) {
+    bigEndianData[i] = nativeToBigEndian<T>((planarData as List)[i]);
+  }
+
+  Uint8List zipData =
+      ZLibEncoder().encode((bigEndianData as TypedData).buffer.asUint8List());
+
+  layer.channelData[channelIndex] = zipData;
+  layer.channelSize[channelIndex] = zipData.length;
+}
+
+void _createDataRaw<T extends NumDataType>(ExportLayer layer, int channelIndex,
+    TypedData planarData, int width, int height) {
+  final size = width * height;
+
+  final elemSize = sizeof<T>();
+  final bigEndianDataList = Uint8List(size * elemSize);
+  final bigEndianData = getTypedList<T>(bigEndianDataList) as List;
+  final srcByteData = planarData.buffer.asByteData();
+
+  for (var i = 0; i < size; ++i) {
+    bigEndianData[i] = getElemEndian<T>(srcByteData, i * elemSize, Endian.big);
+  }
+
+  layer.channelData[channelIndex] = bigEndianDataList;
+  layer.channelSize[channelIndex] = size * elemSize;
+}
+
+void _createDataRLE<T extends NumDataType>(ExportLayer layer, int channelIndex,
+    TypedData planarData, int width, int height) {
+  final size = width * height;
+
+  // each row needs two additional bytes for storing the size of the row's data.
+  // we pack the data row by row, and copy it into the final buffer.
+  var rleData = Uint8List(height * sizeof<Uint16T>() + size * sizeof<T>() * 2);
+
+  var rleRowData = Uint8List(width * sizeof<T>() * 2);
+  var bigEndianRowData = getTypedList<T>(Uint8List(width * sizeof<T>()));
+
+  var offset = 0;
+  for (var y = 0; y < height; ++y) {
+    for (var x = 0; x < width; ++x) {
+      (bigEndianRowData as List)[x] = getElemEndian<T>(
+          planarData.buffer.asByteData(),
+          (y * width + x) * sizeof<T>(),
+          Endian.big);
+    }
+
+    var compressedSize = compressRle(
+        bigEndianRowData.buffer.asUint8List(), rleRowData, width * sizeof<T>());
+    assert(compressedSize <= width * sizeof<T>() * 2,
+        'RLE compressed data doesn\'t fit into provided buffer.');
+
+    // copy 2 bytes row size, and copy RLE data
+    rleData.buffer
+        .asByteData()
+        .setUint16(y * sizeof<Uint16T>(), compressedSize, Endian.big);
+
+    for (var i = 0; i < compressedSize; i++) {
+      rleData[i + height * sizeof<Uint16T>() + offset] = rleRowData[i];
+    }
+
+    offset += compressedSize;
+  }
+
+  layer.channelData[channelIndex] = rleData;
+  layer.channelSize[channelIndex] = offset + height * sizeof<Uint16T>();
+}
+
+void _updateMergedImageImpl<T extends NumDataType>(ExportDocument document,
+    TypedData planarDataR, TypedData planarDataG, TypedData planarDataB) {
+  // free old data
+
+  // copy raw data
+  final size = document.width * document.height;
+  var memoryR = getTypedList<T>(Uint8List(size * sizeof<T>())) as List;
+  var memoryG = getTypedList<T>(Uint8List(size * sizeof<T>())) as List;
+  var memoryB = getTypedList<T>(Uint8List(size * sizeof<T>())) as List;
+  for (var i = 0; i < size; ++i) {
+    memoryR[i] = nativeToBigEndian<T>((planarDataR as List)[i]);
+    memoryG[i] = nativeToBigEndian<T>((planarDataG as List)[i]);
+    memoryB[i] = nativeToBigEndian<T>((planarDataB as List)[i]);
+  }
+  document.mergedImageData[0] = (memoryR as TypedData).buffer.asUint8List();
+  document.mergedImageData[1] = (memoryG as TypedData).buffer.asUint8List();
+  document.mergedImageData[2] = (memoryB as TypedData).buffer.asUint8List();
+}
+
+const _XMP_HEADER = '''<x:xmpmeta xmlns:x = "adobe:ns:meta/">
+		<rdf:RDF xmlns:rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+		<rdf:Description rdf:about=""
+		xmlns:xmp = "http://ns.adobe.com/xap/1.0/"
+		xmlns:dc = "http://purl.org/dc/elements/1.1/"
+		xmlns:photoshop = "http://ns.adobe.com/photoshop/1.0/"
+		xmlns:xmpMM = "http://ns.adobe.com/xap/1.0/mm/"
+		xmlns:stEvt = "http://ns.adobe.com/xap/1.0/sType/ResourceEvent#">''';
+
+const _XMP_FOOTER = '''</rdf:Description>\n
+		</rdf:RDF>\n
+		</x:xmpmeta>\n''';
+
+void _updateChannelImpl<T extends NumDataType>(
+    ExportDocument document, int channelIndex, TypedData data) {
+  // free old data
+
+  // copy raw data
+  var size = document.width * document.height;
+  var channelData = getTypedList<T>(Uint8List(size * sizeof<T>())) as List;
+  for (var i = 0; i < size; ++i) {
+    channelData[i] = nativeToBigEndian<T>((data as List)[i]);
+  }
+  document.alphaChannelData[channelIndex] = channelData;
+}
+
+int _getMetaDataResourceSize(ExportDocument document) {
+  var metaDataSize = _XMP_HEADER.length;
+  for (var i = 0; i < document.attributeCount; ++i) {
+    metaDataSize += ('<xmp:>').length;
+    metaDataSize += (document.attributes[i].name.length) * 2;
+    metaDataSize += (document.attributes[i].value).length;
+    metaDataSize += ('</xmp:>\n').length;
+  }
+  metaDataSize += _XMP_FOOTER.length;
+
+  return metaDataSize;
+}
+
 void _writeToFile(SyncFileWriter writer, Uint8List zeroes) {
   writer.write(zeroes);
 }
@@ -933,15 +941,11 @@ void _writeToFileBE<T extends NumDataType>(SyncFileWriter writer, num i) {
   }
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------------------------------
-int getIccProfileResourceSize(ExportDocument document) {
+int _getIccProfileResourceSize(ExportDocument document) {
   return document.sizeOfICCProfile;
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------------------------------
-int getChannelCount(ExportLayer layer) {
+int _getChannelCount(ExportLayer layer) {
   var count = 0;
   for (var i = 0; i < ExportLayer.MAX_CHANNEL_COUNT; ++i) {
     if (layer.channelData[i] != null) {
@@ -975,14 +979,10 @@ int _getExifDataResourceSize(ExportDocument document) {
   return document.sizeOfExifData;
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------------------------------
 int _getThumbnailResourceSize(ExportDocument document) {
   return document.thumbnail.binaryJpegSize + 28;
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------------------------------
 int _getExtraDataLength(ExportLayer layer) {
   final nameLength = ((layer.name.length));
   final paddedNameLength = roundUpToMultiple(nameLength + 1, 4);
@@ -991,15 +991,11 @@ int _getExtraDataLength(ExportLayer layer) {
   return (4 + 4 + paddedNameLength);
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------------------------------
 int _getDisplayInfoResourceSize(ExportDocument document) {
   // display info consists of 4-byte version, followed by 13 bytes per channel
   return sizeof<Uint32T>() + 13 * document.alphaChannelCount;
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------------------------------
 int _getChannelNamesResourceSize(ExportDocument document) {
   var size = 0;
   for (var i = 0; i < document.alphaChannelCount; ++i) {
@@ -1009,8 +1005,6 @@ int _getChannelNamesResourceSize(ExportDocument document) {
   return (size);
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------------------------------
 int _getUnicodeChannelNamesResourceSize(ExportDocument document) {
   var size = 0;
   for (var i = 0; i < document.alphaChannelCount; ++i) {
@@ -1068,20 +1062,18 @@ int _getLayerInfoSectionLength(ExportDocument document) {
     var layer = document.layers[i];
     size += 16 +
         2 +
-        getChannelCount(layer) * 6 +
+        _getChannelCount(layer) * 6 +
         4 +
         4 +
         4 +
         _getExtraDataLength(layer) +
         4;
-    size += _getChannelDataSize(layer) + getChannelCount(layer) * 2;
+    size += _getChannelDataSize(layer) + _getChannelCount(layer) * 2;
   }
 
   return size;
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------------------------------
 int _getChannelDataSize(ExportLayer layer) {
   var size = 0;
   for (var i = 0; i < ExportLayer.MAX_CHANNEL_COUNT; ++i) {

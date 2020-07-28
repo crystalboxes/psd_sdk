@@ -5,7 +5,7 @@ import 'file.dart';
 class SyncFileWriter {
   SyncFileWriter(File file) : _file = file;
 
-  /// Writes \a count bytes from \a buffer synchronously, incrementing the internal write position.
+  /// Writes count bytes from buffer synchronously, incrementing the internal write position.
   void write<T>(T buffer, [int count]) {
     if (buffer is ByteBuffer) {
       count ??= buffer.lengthInBytes;

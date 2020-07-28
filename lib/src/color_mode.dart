@@ -1,3 +1,4 @@
+/// A class holding all color modes known by Photoshop.
 class ColorMode {
   /// BITMAP = 0;
   static const BITMAP = 0;

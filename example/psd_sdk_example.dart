@@ -244,8 +244,6 @@ int sampleReadPsd() {
       }
     }
 
-    destroyLayerMaskSection(layerMaskSection);
-
     // extract the image data section, if available. the image data section stores
     // the final, merged image, as well as additional alpha channels. this is only
     // available when saving the document with "Maximize Compatibility" turned on.
@@ -365,7 +363,6 @@ final gOrData32 = Float32List(IMAGE_WIDTH * IMAGE_HEIGHT);
 final gAndData32 = Float32List(IMAGE_WIDTH * IMAGE_HEIGHT);
 final gCheckerBoardData32 = Float32List(IMAGE_WIDTH * IMAGE_HEIGHT);
 
-// ---------------------------------------------------------------------------------------------------------------------
 void GenerateImageData() {
   for (var y = 0; y < IMAGE_HEIGHT; ++y) {
     for (var x = 0; x < IMAGE_WIDTH; ++x) {
@@ -393,8 +390,6 @@ void GenerateImageData() {
   }
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------------------------------
 int sampleWritePsd() {
   GenerateImageData();
 

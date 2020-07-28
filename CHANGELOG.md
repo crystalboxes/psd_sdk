@@ -1,3 +1,11 @@
+## 0.1.5
+
+- Added documentation
+
+## 0.1.4
+
+- Get last error function
+
 ## 0.1.3
 
 - API cleanup

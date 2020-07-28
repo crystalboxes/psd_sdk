@@ -1,3 +1,4 @@
+/// A channel holding constants to distinguish between the types of data a channel can hold.
 class ChannelType {
   /// Internal value. Used to denote that a channel no longer holds valid data.
   static const INVALID = 32767;

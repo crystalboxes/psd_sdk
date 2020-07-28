@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+/// Base class for all files.
 class File {
   Uint8List get bytes => _uint8list;
   ByteBuffer get buffer => _uint8list.buffer;

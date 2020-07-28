@@ -1,94 +1,94 @@
 import 'package:psd_sdk/src/key.dart';
 
 enum BlendMode {
-  ///< Key = "pass"
+  /// Key = "pass"
   PASS_THROUGH,
 
-  ///< Key = "norm"
+  /// Key = "norm"
   NORMAL,
 
-  ///< Key = "diss"
+  /// Key = "diss"
   DISSOLVE,
 
-  ///< Key = "dark"
+  /// Key = "dark"
   DARKEN,
 
-  ///< Key = "mul "
+  /// Key = "mul "
   MULTIPLY,
 
-  ///< Key = "idiv"
+  /// Key = "idiv"
   COLOR_BURN,
 
-  ///< Key = "lbrn"
+  /// Key = "lbrn"
   LINEAR_BURN,
 
-  ///< Key = "dkCl"
+  /// Key = "dkCl"
   DARKER_COLOR,
 
-  ///< Key = "lite"
+  /// Key = "lite"
   LIGHTEN,
 
-  ///< Key = "scrn"
+  /// Key = "scrn"
   SCREEN,
 
-  ///< Key = "div "
+  /// Key = "div "
   COLOR_DODGE,
 
-  ///< Key = "lddg"
+  /// Key = "lddg"
   LINEAR_DODGE,
 
-  ///< Key = "lgCl"
+  /// Key = "lgCl"
   LIGHTER_COLOR,
 
-  ///< Key = "over"
+  /// Key = "over"
   OVERLAY,
 
-  ///< Key = "sLit"
+  /// Key = "sLit"
   SOFT_LIGHT,
 
-  ///< Key = "hLit"
+  /// Key = "hLit"
   HARD_LIGHT,
 
-  ///< Key = "vLit"
+  /// Key = "vLit"
   VIVID_LIGHT,
 
-  ///< Key = "lLit"
+  /// Key = "lLit"
   LINEAR_LIGHT,
 
-  ///< Key = "pLit"
+  /// Key = "pLit"
   PIN_LIGHT,
 
-  ///< Key = "hMix"
+  /// Key = "hMix"
   HARD_MIX,
 
-  ///< Key = "diff"
+  /// Key = "diff"
   DIFFERENCE,
 
-  ///< Key = "smud"
+  /// Key = "smud"
   EXCLUSION,
 
-  ///< Key = "fsub"
+  /// Key = "fsub"
   SUBTRACT,
 
-  ///< Key = "fdiv"
+  /// Key = "fdiv"
   DIVIDE,
 
-  ///< Key = "hue "
+  /// Key = "hue "
   HUE,
 
-  ///< Key = "sat "
+  /// Key = "sat "
   SATURATION,
 
-  ///< Key = "colr"
+  /// Key = "colr"
   COLOR,
 
-  ///< Key = "lum "
+  /// Key = "lum "
   LUMINOSITY,
 
   UNKNOWN
 }
 
-/// Converts a given \a key to the corresponding \ref blendMode::Enum.
+/// Converts a given key to the corresponding BlendMode.
 BlendMode blendModeKeyToEnum(int key) {
   if (key == keyValue('pass')) {
     return BlendMode.PASS_THROUGH;

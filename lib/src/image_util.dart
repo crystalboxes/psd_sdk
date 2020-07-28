@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'data_types.dart';
 
+/// Copies planar layer data to a canvas. Only the parts overlapping the canvas will be copied to it.
 bool copyLayerData(
     Uint8List layerData,
     Uint8List canvasData,
@@ -28,7 +29,6 @@ bool copyLayerData(
     return false;
   }
 }
-
 
 bool _isOutside(int layerLeft, int layerTop, int layerRight, int layerBottom,
     int canvasWidth, int canvasHeight) {
@@ -61,7 +61,6 @@ bool _isSameRegion(int layerLeft, int layerTop, int layerRight, int layerBottom,
 
   return false;
 }
-
 
 void _copyLayerData<T extends NumDataType>(
     Uint8List layerData,

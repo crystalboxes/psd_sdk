@@ -69,8 +69,6 @@ class TgaHeader {
   int attributes;
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------------------------------
 TgaHeader createHeader(int width, int height, int type, int bitsPerPixel) {
   var header = TgaHeader();
   header.idLength = 0;

@@ -1,6 +1,9 @@
 import 'dart:typed_data';
 import 'data_types.dart';
 
+/// Turns planar 8-bit RGB data into interleaved RGBA data with a constant, predefined alpha.
+/// The destination buffer dest must hold "width*height*4" bytes.
+/// All given buffers (both source and destination) must be aligned to 16 bytes.
 Uint8List interleaveRGB(Uint8List srcR, Uint8List srcG, Uint8List srcB,
     num alpha, int bitsPerChannel, int width, int height,
     [int blockSize = 4]) {
@@ -14,6 +17,9 @@ Uint8List interleaveRGB(Uint8List srcR, Uint8List srcG, Uint8List srcB,
   return null;
 }
 
+/// Turns planar 8-bit RGBA data into interleaved RGBA data.
+/// The destination buffer dest must hold "width*height*4" bytes.
+/// All given buffers (both source and destination) must be aligned to 16 bytes.
 Uint8List interleaveRGBA(Uint8List srcR, Uint8List srcG, Uint8List srcB,
     Uint8List srcA, int bitsPerChannel, int width, int height,
     [int blockSize = 4]) {
