@@ -10,8 +10,7 @@ import 'image_resources_section.dart';
 import 'sync_file_reader.dart';
 import 'thumbnail.dart';
 
-/// Parses the image resources section in the document, and returns a newly created instance that needs to be freed
-/// by a call to DestroyImageResourcesSection.
+/// Parses the image resources section in the document, and returns a newly created instance.
 /// It is valid to parse different sections of a document (e.g. using parseImageResourcesSection, parseImageDataSection,
 /// or parseLayerMaskSection) in parallel from different threads.
 ImageResourcesSection parseImageResourcesSection(Document document, File file) {
