@@ -1,8 +1,12 @@
+## 0.1.3
+
+- API cleanup
+
 ## 0.1.2
 
 - Updated readme
 
-- ## 0.1.1
+## 0.1.1
 
 - Cleanup
 

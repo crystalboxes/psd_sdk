@@ -1,7 +1,7 @@
 import 'dart:typed_data';
-import 'layer.dart';
+import 'layer_rect.dart';
 
-class Mask implements BoundsRect {
+class Mask implements LayerRect {
   /// Top coordinate of the rectangle that encloses the mask.
   @override
   int top;

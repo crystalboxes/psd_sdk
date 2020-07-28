@@ -25,67 +25,36 @@ String getSampleOutputPath() {
   return 'example/sample_output/';
 }
 
-Uint8List expandChannelToCanvas<T extends NumDataType>(
-    BoundsRect layer, Uint8List data, int canvasWidth, int canvasHeight) {
-  var canvasData = Uint8List.fromList(
-      List.filled(sizeof<T>() * canvasWidth * canvasHeight, 0));
-
-  copyLayerData<T>(data, canvasData, layer.left, layer.top, layer.right,
-      layer.bottom, canvasWidth, canvasHeight);
-
-  return canvasData;
-}
-
-Uint8List expandChannelToCanvas2(
-    Document document, BoundsRect layer, Channel channel) {
-  if (document.bitsPerChannel == 8) {
-    return expandChannelToCanvas<Uint8T>(
-        layer, channel.data, document.width, document.height);
-  } else if (document.bitsPerChannel == 16) {
-    return expandChannelToCanvas<Uint16T>(
-        layer, channel.data, document.width, document.height);
-  } else if (document.bitsPerChannel == 32) {
-    return expandChannelToCanvas<Float32T>(
-        layer, channel.data, document.width, document.height);
+Uint8List expandChannelToCanvas(
+    Document document, dynamic layer, Channel channel) {
+  var canvasData = Uint8List.fromList(List.filled(
+      document.bitsPerChannel ~/ 8 * document.width * document.height, 0));
+  if (copyLayerData(
+    channel.data,
+    canvasData,
+    document.bitsPerChannel,
+    layer.left,
+    layer.top,
+    layer.right,
+    layer.bottom,
+    document.width,
+    document.height,
+  )) {
+    return canvasData;
   }
-
   return null;
 }
 
 Uint8List expandMaskToCanvas(Document document, Mask mask) {
-  if (document.bitsPerChannel == 8) {
-    return expandChannelToCanvas<Uint8T>(
-        mask, mask.data, document.width, document.height);
-  } else if (document.bitsPerChannel == 16) {
-    return expandChannelToCanvas<Uint16T>(
-        mask, mask.data, document.width, document.height);
-  } else if (document.bitsPerChannel == 32) {
-    return expandChannelToCanvas<Float32T>(
-        mask, mask.data, document.width, document.height);
+  var canvasData = Uint8List.fromList(List.filled(
+      document.bitsPerChannel ~/ 8 * document.width * document.height, 0));
+
+  if (copyLayerData(mask.data, canvasData, document.bitsPerChannel, mask.left,
+      mask.top, mask.right, mask.bottom, document.width, document.height)) {
+    return canvasData;
   }
 
   return null;
-}
-
-Uint8List createInterleavedImage<T extends NumDataType>(
-    Uint8List srcR, Uint8List srcG, Uint8List srcB, int width, int height) {
-  final r = (srcR);
-  final g = (srcG);
-  final b = (srcB);
-  var image = interleaveRGB<T>(r, g, b, 0, width, height);
-
-  return image;
-}
-
-Uint8List createInterleavedImageRGBA<T extends NumDataType>(Uint8List srcR,
-    Uint8List srcG, Uint8List srcB, Uint8List srcA, int width, int height) {
-  final r = (srcR);
-  final g = (srcG);
-  final b = (srcB);
-  final a = (srcA);
-  var image = interleaveRGBA<T>(r, g, b, a, width, height);
-
-  return image;
 }
 
 int sampleReadPsd() {
@@ -153,17 +122,17 @@ int sampleReadPsd() {
           (indexB != CHANNEL_NOT_FOUND)) {
         // RGB channels were found.
         canvasData[0] =
-            expandChannelToCanvas2(document, layer, layer.channels[indexR]);
+            expandChannelToCanvas(document, layer, layer.channels[indexR]);
         canvasData[1] =
-            expandChannelToCanvas2(document, layer, layer.channels[indexG]);
+            expandChannelToCanvas(document, layer, layer.channels[indexG]);
         canvasData[2] =
-            expandChannelToCanvas2(document, layer, layer.channels[indexB]);
+            expandChannelToCanvas(document, layer, layer.channels[indexB]);
         channelCount = 3;
 
         if (indexA != CHANNEL_NOT_FOUND) {
           // A channel was also found.
           canvasData[3] =
-              expandChannelToCanvas2(document, layer, layer.channels[indexA]);
+              expandChannelToCanvas(document, layer, layer.channels[indexA]);
           channelCount = 4;
         }
       }
@@ -172,45 +141,24 @@ int sampleReadPsd() {
       // RGBA image, depending on what channels we found, and what color mode
       // the document is stored in.
       // ignore: unused_local_variable
-      Uint8List image8, image16, image32;
-      if (channelCount == 3) {
-        if (document.bitsPerChannel == 8) {
-          image8 = createInterleavedImage<Uint8T>(canvasData[0], canvasData[1],
-              canvasData[2], document.width, document.height);
-        } else if (document.bitsPerChannel == 16) {
-          image16 = createInterleavedImage<Uint16T>(canvasData[0],
-              canvasData[1], canvasData[2], document.width, document.height);
-        } else if (document.bitsPerChannel == 32) {
-          image32 = createInterleavedImage<Float32T>(canvasData[0],
-              canvasData[1], canvasData[2], document.width, document.height);
-        }
-      } else if (channelCount == 4) {
-        if (document.bitsPerChannel == 8) {
-          image8 = createInterleavedImageRGBA<Uint8T>(
+
+      final image = channelCount == 3
+          ? interleaveRGB(canvasData[0], canvasData[1], canvasData[2],
+              document.bitsPerChannel, 0, document.width, document.height)
+          : interleaveRGBA(
               canvasData[0],
               canvasData[1],
               canvasData[2],
               canvasData[3],
+              document.bitsPerChannel,
               document.width,
               document.height);
-        } else if (document.bitsPerChannel == 16) {
-          image16 = createInterleavedImageRGBA<Uint16T>(
-              canvasData[0],
-              canvasData[1],
-              canvasData[2],
-              canvasData[3],
-              document.width,
-              document.height);
-        } else if (document.bitsPerChannel == 32) {
-          image32 = createInterleavedImageRGBA<Float32T>(
-              canvasData[0],
-              canvasData[1],
-              canvasData[2],
-              canvasData[3],
-              document.width,
-              document.height);
-        }
-      }
+
+      final image8 = document.bitsPerChannel == 8 ? image : null;
+      // ignore: unused_local_variable
+      final image16 = document.bitsPerChannel == 16 ? image : null;
+      // ignore: unused_local_variable
+      final image32 = document.bitsPerChannel == 32 ? image : null;
 
       // get the layer name.
       // Unicode data is preferred because it is not truncated by Photoshop, but
@@ -302,7 +250,7 @@ int sampleReadPsd() {
     // the final, merged image, as well as additional alpha channels. this is only
     // available when saving the document with "Maximize Compatibility" turned on.
     if (document.imageDataSection.length != 0) {
-      var imageData = ParseImageDataSection(document, file);
+      var imageData = parseImageDataSection(document, file);
       if (imageData != null) {
         // interleave the planar image data into one RGB or RGBA image.
         // store the rest of the (alpha) channels and the transparency mask
@@ -333,60 +281,29 @@ int sampleReadPsd() {
           }
         }
 
+        final image = isRgb
+            ? interleaveRGB(
+                imageData.images[0].data,
+                imageData.images[1].data,
+                imageData.images[2].data,
+                0,
+                document.bitsPerChannel,
+                document.width,
+                document.height)
+            : interleaveRGBA(
+                imageData.images[0].data,
+                imageData.images[1].data,
+                imageData.images[2].data,
+                imageData.images[3].data,
+                document.bitsPerChannel,
+                document.width,
+                document.height);
+
+        final image8 = document.bitsPerChannel == 8 ? image : null;
         // ignore: unused_local_variable
-        Uint8List image8, image16, image32;
-        if (isRgb) {
-          // RGB
-          if (document.bitsPerChannel == 8) {
-            image8 = createInterleavedImage<Uint8T>(
-                imageData.images[0].data,
-                imageData.images[1].data,
-                imageData.images[2].data,
-                document.width,
-                document.height);
-          } else if (document.bitsPerChannel == 16) {
-            image16 = createInterleavedImage<Uint16T>(
-                imageData.images[0].data,
-                imageData.images[1].data,
-                imageData.images[2].data,
-                document.width,
-                document.height);
-          } else if (document.bitsPerChannel == 32) {
-            image32 = createInterleavedImage<Float32T>(
-                imageData.images[0].data,
-                imageData.images[1].data,
-                imageData.images[2].data,
-                document.width,
-                document.height);
-          }
-        } else {
-          // RGBA
-          if (document.bitsPerChannel == 8) {
-            image8 = createInterleavedImageRGBA<Uint8T>(
-                imageData.images[0].data,
-                imageData.images[1].data,
-                imageData.images[2].data,
-                imageData.images[3].data,
-                document.width,
-                document.height);
-          } else if (document.bitsPerChannel == 16) {
-            image16 = createInterleavedImageRGBA<Uint16T>(
-                imageData.images[0].data,
-                imageData.images[1].data,
-                imageData.images[2].data,
-                imageData.images[3].data,
-                document.width,
-                document.height);
-          } else if (document.bitsPerChannel == 32) {
-            image32 = createInterleavedImageRGBA<Float32T>(
-                imageData.images[0].data,
-                imageData.images[1].data,
-                imageData.images[2].data,
-                imageData.images[3].data,
-                document.width,
-                document.height);
-          }
-        }
+        final image16 = document.bitsPerChannel == 16 ? image : null;
+        // ignore: unused_local_variable
+        final image32 = document.bitsPerChannel == 32 ? image : null;
 
         if (document.bitsPerChannel == 8) {
           var filename = '${getSampleOutputPath()}' 'merged.tga';

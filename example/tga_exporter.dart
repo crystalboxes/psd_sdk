@@ -1,7 +1,38 @@
 import 'dart:io' as io;
 import 'dart:typed_data';
 
-import 'package:psd_sdk/psd_sdk.dart';
+abstract class NumDataType {}
+
+class U8 extends NumDataType {}
+
+class U16 extends NumDataType {}
+
+int sizeof<T extends NumDataType>() {
+  switch (T) {
+    case U16:
+      return 2;
+    case U8:
+      return 1;
+    default:
+      throw Error();
+  }
+}
+
+void setByteData<T extends NumDataType>(ByteData data, num value,
+    [Endian endian]) {
+  endian ??= Endian.host;
+  switch (T) {
+    case U16:
+      data.setUint16(0, value, endian);
+      break;
+    case U8:
+      data.setUint8(0, value);
+      break;
+    default:
+      throw Error();
+      break;
+  }
+}
 
 class TgaType {
   // TGA file contains BGR triplets of color data.
@@ -76,18 +107,18 @@ class TgaFile {
   }
 
   void writeHeader(TgaHeader header) {
-    write<Uint8T>(header.idLength);
-    write<Uint8T>(header.paletteType);
-    write<Uint8T>(header.type);
-    write<Uint16T>(header.paletteOffset);
-    write<Uint16T>(header.paletteLength);
-    write<Uint8T>(header.bitsPerPaletteEntry);
-    write<Uint16T>(header.originX);
-    write<Uint16T>(header.originY);
-    write<Uint16T>(header.width);
-    write<Uint16T>(header.height);
-    write<Uint8T>(header.bitsPerPixel);
-    write<Uint8T>(header.attributes);
+    write<U8>(header.idLength);
+    write<U8>(header.paletteType);
+    write<U8>(header.type);
+    write<U16>(header.paletteOffset);
+    write<U16>(header.paletteLength);
+    write<U8>(header.bitsPerPaletteEntry);
+    write<U16>(header.originX);
+    write<U16>(header.originY);
+    write<U16>(header.width);
+    write<U16>(header.height);
+    write<U8>(header.bitsPerPixel);
+    write<U8>(header.attributes);
   }
 
   var list = <int>[];
@@ -113,8 +144,6 @@ TgaFile createFile(String filename) {
   return TgaFile(filename);
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------------------------------
 void saveMonochrome(String filename, int width, int height, Uint8List data) {
   var file = createFile(filename);
 
@@ -126,8 +155,6 @@ void saveMonochrome(String filename, int width, int height, Uint8List data) {
   }
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------------------------------
 void saveRGB(String filename, int width, int height, Uint8List data) {
   var file = createFile(filename);
 
@@ -153,8 +180,6 @@ void saveRGB(String filename, int width, int height, Uint8List data) {
   }
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------------------------------
 void saveRGBA(String filename, int width, int height, Uint8List data) {
   var file = createFile(filename);
 

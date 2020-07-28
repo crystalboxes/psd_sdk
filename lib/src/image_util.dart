@@ -1,12 +1,36 @@
-// ---------------------------------------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------------------------------
 import 'dart:typed_data';
 
 import 'data_types.dart';
 
-// ---------------------------------------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------------------------------
-bool isOutside(int layerLeft, int layerTop, int layerRight, int layerBottom,
+bool copyLayerData(
+    Uint8List layerData,
+    Uint8List canvasData,
+    int bitsPerChannel,
+    int layerLeft,
+    int layerTop,
+    int layerRight,
+    int layerBottom,
+    int canvasWidth,
+    int canvasHeight) {
+  if (bitsPerChannel == 8) {
+    _copyLayerData<Uint8T>(layerData, canvasData, layerLeft, layerTop,
+        layerRight, layerBottom, canvasWidth, canvasHeight);
+    return true;
+  } else if (bitsPerChannel == 16) {
+    _copyLayerData<Uint16T>(layerData, canvasData, layerLeft, layerTop,
+        layerRight, layerBottom, canvasWidth, canvasHeight);
+    return true;
+  } else if (bitsPerChannel == 32) {
+    _copyLayerData<Float32T>(layerData, canvasData, layerLeft, layerTop,
+        layerRight, layerBottom, canvasWidth, canvasHeight);
+    return true;
+  } else {
+    return false;
+  }
+}
+
+
+bool _isOutside(int layerLeft, int layerTop, int layerRight, int layerBottom,
     int canvasWidth, int canvasHeight) {
   // layer data can be completely outside the canvas, or overlapping, or completely inside.
   // find the overlapping rectangle first.
@@ -23,9 +47,7 @@ bool isOutside(int layerLeft, int layerTop, int layerRight, int layerBottom,
   return false;
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------------------------------
-bool isSameRegion(int layerLeft, int layerTop, int layerRight, int layerBottom,
+bool _isSameRegion(int layerLeft, int layerTop, int layerRight, int layerBottom,
     int canvasWidth, int canvasHeight) {
   final w = (canvasWidth);
   final h = (canvasHeight);
@@ -40,9 +62,8 @@ bool isSameRegion(int layerLeft, int layerTop, int layerRight, int layerBottom,
   return false;
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------------------------------
-void copyLayerData<T extends NumDataType>(
+
+void _copyLayerData<T extends NumDataType>(
     Uint8List layerData,
     Uint8List canvasData,
     int layerLeft,
@@ -51,15 +72,15 @@ void copyLayerData<T extends NumDataType>(
     int layerBottom,
     int canvasWidth,
     int canvasHeight) {
-  final _isOutside = isOutside(
+  final isOutside = _isOutside(
       layerLeft, layerTop, layerRight, layerBottom, canvasWidth, canvasHeight);
-  if (_isOutside) {
+  if (isOutside) {
     return;
   }
 
-  var _isSameRegion = isSameRegion(
+  var isSameRegion = _isSameRegion(
       layerLeft, layerTop, layerRight, layerBottom, canvasWidth, canvasHeight);
-  if (_isSameRegion) {
+  if (isSameRegion) {
     // fast path, the layer is exactly the same size as the canvas
 
     for (var x = 0; x < canvasWidth * canvasHeight * sizeof<T>(); x++) {

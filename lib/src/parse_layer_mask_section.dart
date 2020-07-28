@@ -4,6 +4,7 @@ import 'package:archive/archive.dart';
 
 import 'channel.dart';
 import 'key.dart';
+import 'layer_rect.dart';
 import 'log.dart';
 import 'bit_util.dart';
 import 'channel_type.dart';
@@ -736,7 +737,7 @@ void _getChannelExtents(
   return _getExtents(layer, width, height);
 }
 
-int _getWidth<T extends BoundsRect>(T data) {
+int _getWidth<T extends LayerRect>(T data) {
   if (data.right > data.left) {
     return (data.right - data.left);
   }
@@ -744,7 +745,7 @@ int _getWidth<T extends BoundsRect>(T data) {
   return 0;
 }
 
-int _getHeight<T extends BoundsRect>(T data) {
+int _getHeight<T extends LayerRect>(T data) {
   if (data.bottom > data.top) {
     return (data.bottom - data.top);
   }
@@ -752,7 +753,7 @@ int _getHeight<T extends BoundsRect>(T data) {
   return 0;
 }
 
-void _getExtents<T extends BoundsRect>(
+void _getExtents<T extends LayerRect>(
     T data, _Ref<int> width, _Ref<int> height) {
   width.set(_getWidth(data));
   height.set(_getHeight(data));

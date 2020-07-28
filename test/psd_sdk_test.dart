@@ -9,7 +9,7 @@ import 'canvas_data_test.dart';
 
 const int CHANNEL_NOT_FOUND = -1;
 
-int testA() {
+int main() {
   final srcPath = '${getSampleInputPath()}Sample.psd';
   var file = File();
   try {
@@ -51,7 +51,7 @@ int testA() {
   // extract all layers one by one. this should be done in parallel for
   // maximum efficiency.
 
-  var imageData = ParseImageDataSection(document, file);
+  var imageData = parseImageDataSection(document, file);
   // interleave the planar image data into one RGB or RGBA image.
   // store the rest of the (alpha) channels and the transparency mask
   // separately.
@@ -81,62 +81,27 @@ int testA() {
     }
   }
 
-  Uint8List image8;
-  Uint8List image16;
-  Uint8List image32;
+  final image = isRgb
+      ? interleaveRGB(
+          imageData.images[0].data,
+          imageData.images[1].data,
+          imageData.images[2].data,
+          0,
+          document.bitsPerChannel,
+          document.width,
+          document.height)
+      : interleaveRGBA(
+          imageData.images[0].data,
+          imageData.images[1].data,
+          imageData.images[2].data,
+          imageData.images[3].data,
+          document.bitsPerChannel,
+          document.width,
+          document.height);
 
-  if (isRgb) {
-    // RGB
-    if (document.bitsPerChannel == 8) {
-      image8 = createInterleavedImage<Uint8T>(
-          imageData.images[0].data,
-          imageData.images[1].data,
-          imageData.images[2].data,
-          document.width,
-          document.height);
-    } else if (document.bitsPerChannel == 16) {
-      image16 = createInterleavedImage<Uint16T>(
-          imageData.images[0].data,
-          imageData.images[1].data,
-          imageData.images[2].data,
-          document.width,
-          document.height);
-    } else if (document.bitsPerChannel == 32) {
-      image32 = createInterleavedImage<Float32T>(
-          imageData.images[0].data,
-          imageData.images[1].data,
-          imageData.images[2].data,
-          document.width,
-          document.height);
-    }
-  } else {
-    // RGBA
-    if (document.bitsPerChannel == 8) {
-      image8 = createInterleavedImageRGBA<Uint8T>(
-          imageData.images[0].data,
-          imageData.images[1].data,
-          imageData.images[2].data,
-          imageData.images[3].data,
-          document.width,
-          document.height);
-    } else if (document.bitsPerChannel == 16) {
-      image16 = createInterleavedImageRGBA<Uint16T>(
-          imageData.images[0].data,
-          imageData.images[1].data,
-          imageData.images[2].data,
-          imageData.images[3].data,
-          document.width,
-          document.height);
-    } else if (document.bitsPerChannel == 32) {
-      image32 = createInterleavedImageRGBA<Float32T>(
-          imageData.images[0].data,
-          imageData.images[1].data,
-          imageData.images[2].data,
-          imageData.images[3].data,
-          document.width,
-          document.height);
-    }
-  }
+  final image8 = document.bitsPerChannel == 8 ? image : null;
+  final image16 = document.bitsPerChannel == 16 ? image : null;
+  final image32 = document.bitsPerChannel == 32 ? image : null;
 
   test('Merged image', () {
     expect(image8 != null, true);
@@ -191,17 +156,17 @@ void testCanvasData(Document document, File file, Layer layer) {
       (indexB != CHANNEL_NOT_FOUND)) {
     // RGB channels were found.
     canvasData[0] =
-        expandChannelToCanvas2(document, layer, layer.channels[indexR]);
+        expandChannelToCanvas(document, layer, layer.channels[indexR]);
     canvasData[1] =
-        expandChannelToCanvas2(document, layer, layer.channels[indexG]);
+        expandChannelToCanvas(document, layer, layer.channels[indexG]);
     canvasData[2] =
-        expandChannelToCanvas2(document, layer, layer.channels[indexB]);
+        expandChannelToCanvas(document, layer, layer.channels[indexB]);
     channelCount = 3;
 
     if (indexA != CHANNEL_NOT_FOUND) {
       // A channel was also found.
       canvasData[3] =
-          expandChannelToCanvas2(document, layer, layer.channels[indexA]);
+          expandChannelToCanvas(document, layer, layer.channels[indexA]);
       channelCount = 4;
     }
   }
@@ -209,20 +174,17 @@ void testCanvasData(Document document, File file, Layer layer) {
   // interleave the different pieces of planar canvas data into one RGB or
   // RGBA image, depending on what channels we found, and what color mode
   // the document is stored in.
-  Uint8List image8;
-  if (channelCount == 3) {
-    if (document.bitsPerChannel == 8) {
-      image8 = createInterleavedImage<Uint8T>(canvasData[0], canvasData[1],
-          canvasData[2], document.width, document.height);
-    } else if (document.bitsPerChannel == 16) {
-    } else if (document.bitsPerChannel == 32) {}
-  } else if (channelCount == 4) {
-    if (document.bitsPerChannel == 8) {
-      image8 = createInterleavedImageRGBA<Uint8T>(canvasData[0], canvasData[1],
-          canvasData[2], canvasData[3], document.width, document.height);
-    } else if (document.bitsPerChannel == 16) {
-    } else if (document.bitsPerChannel == 32) {}
-  }
+  final image8 = channelCount == 3
+      ? interleaveRGB(canvasData[0], canvasData[1], canvasData[2],
+          document.bitsPerChannel, 0, document.width, document.height)
+      : interleaveRGBA(
+          canvasData[0],
+          canvasData[1],
+          canvasData[2],
+          canvasData[3],
+          document.bitsPerChannel,
+          document.width,
+          document.height);
 
   test('Channel indices', () {
     expect(indexR, 1);
@@ -232,8 +194,4 @@ void testCanvasData(Document document, File file, Layer layer) {
   });
 
   canvasDataTest(canvasData, image8);
-}
-
-void main() {
-  testA();
 }

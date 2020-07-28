@@ -2,16 +2,10 @@ import 'dart:typed_data';
 
 import 'channel.dart';
 import 'layer_mask.dart';
-
-class BoundsRect {
-  int right;
-  int left;
-  int top;
-  int bottom;
-}
+import 'layer_rect.dart';
 
 /// A struct representing a layer as stored in the Layer Mask Info section.
-class Layer implements BoundsRect {
+class Layer implements LayerRect {
   /// The layer's parent layer, if any.
   Layer parent;
 

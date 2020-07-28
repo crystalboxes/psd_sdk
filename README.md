@@ -1,6 +1,6 @@
 # psd_sdk
 
-[![pub package](https://img.shields.io/badge/pub-0.1.2-blueviolet.svg)](https://pub.dev/packages/psd_sdk)
+[![pub package](https://img.shields.io/badge/pub-0.1.3-blueviolet.svg)](https://pub.dev/packages/psd_sdk)
 
 A Dart library that directly reads Photoshop PSD files. Ported from [psd_sdk](https://github.com/MolecularMatters/psd_sdk) by [Molecular Matters](https://molecular-matters.com/)
 

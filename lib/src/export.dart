@@ -47,17 +47,6 @@ int addMetaData(ExportDocument document, String name, String value) {
   return index;
 }
 
-String _createString(String str) {
-  return str;
-}
-
-void _updateMetaData(
-    ExportDocument document, int index, String name, String value) {
-  var attribute = document.attributes[index];
-  attribute.name = _createString(name);
-  attribute.value = _createString(value);
-}
-
 int addLayer(ExportDocument document, String name) {
   final index = document.layerCount;
   document.layers.add(ExportLayer());
@@ -65,28 +54,6 @@ int addLayer(ExportDocument document, String name) {
   var layer = document.layers[index];
   layer.name = _createString(name);
   return index;
-}
-
-int _getChannelIndex(int channel) {
-  switch (channel) {
-    case ExportChannel.GRAY:
-      return 0;
-
-    case ExportChannel.RED:
-      return 0;
-
-    case ExportChannel.GREEN:
-      return 1;
-
-    case ExportChannel.BLUE:
-      return 2;
-
-    case ExportChannel.ALPHA:
-      return 3;
-
-    default:
-      return 0;
-  }
 }
 
 void updateLayer<T extends TypedData>(
@@ -110,6 +77,69 @@ void updateLayer<T extends TypedData>(
         bottom, planarData, compression);
   } else {
     print('not supported');
+  }
+}
+
+int addAlphaChannel(ExportDocument document, String name, int r, int g, int b,
+    int a, int opacity, int mode) {
+  final index = document.alphaChannelCount;
+  document.alphaChannels.add(AlphaChannel());
+
+  var channel = document.alphaChannels[index];
+  channel.asciiName = name;
+  channel.colorSpace = 0;
+  channel.color[0] = r;
+  channel.color[1] = g;
+  channel.color[2] = b;
+  channel.color[3] = a;
+  channel.opacity = opacity;
+  channel.mode = mode;
+
+  return index;
+}
+
+void updateChannel(ExportDocument document, int channelIndex, TypedData data) {
+  if (data is Uint8List) {
+    _updateChannelImpl<Uint8T>(document, channelIndex, data);
+  } else if (data is Uint16List) {
+    _updateChannelImpl<Uint16T>(document, channelIndex, data);
+  } else if (data is Float32List) {
+    _updateChannelImpl<Float32T>(document, channelIndex, data);
+  } else {
+    print('unsupported');
+  }
+}
+
+String _createString(String str) {
+  return str;
+}
+
+void _updateMetaData(
+    ExportDocument document, int index, String name, String value) {
+  var attribute = document.attributes[index];
+  attribute.name = _createString(name);
+  attribute.value = _createString(value);
+}
+
+int _getChannelIndex(int channel) {
+  switch (channel) {
+    case ExportChannel.GRAY:
+      return 0;
+
+    case ExportChannel.RED:
+      return 0;
+
+    case ExportChannel.GREEN:
+      return 1;
+
+    case ExportChannel.BLUE:
+      return 2;
+
+    case ExportChannel.ALPHA:
+      return 3;
+
+    default:
+      return 0;
   }
 }
 
@@ -155,7 +185,7 @@ void _updateLayerImpl<T extends NumDataType>(
     _createDataRaw<T>(layer, channelIndex, planarData, width, height);
   } else if (compression == CompressionType.RLE) {
     // compress with RLE
-    CreateDataRLE<T>(layer, channelIndex, planarData, width, height);
+    _createDataRLE<T>(layer, channelIndex, planarData, width, height);
   } else if (compression == CompressionType.ZIP) {
     // compress with ZIP
     // note that this has a template specialization for 32-bit float data that forwards to ZipWithPrediction.
@@ -291,7 +321,7 @@ void _createDataRaw<T extends NumDataType>(ExportLayer layer, int channelIndex,
   layer.channelSize[channelIndex] = size * elemSize;
 }
 
-void CreateDataRLE<T extends NumDataType>(ExportLayer layer, int channelIndex,
+void _createDataRLE<T extends NumDataType>(ExportLayer layer, int channelIndex,
     TypedData planarData, int width, int height) {
   final size = width * height;
 
@@ -365,36 +395,6 @@ void _updateMergedImageImpl<T extends NumDataType>(ExportDocument document,
   document.mergedImageData[0] = (memoryR as TypedData).buffer.asUint8List();
   document.mergedImageData[1] = (memoryG as TypedData).buffer.asUint8List();
   document.mergedImageData[2] = (memoryB as TypedData).buffer.asUint8List();
-}
-
-int addAlphaChannel(ExportDocument document, String name, int r, int g, int b,
-    int a, int opacity, int mode) {
-  final index = document.alphaChannelCount;
-  document.alphaChannels.add(AlphaChannel());
-
-  var channel = document.alphaChannels[index];
-  channel.asciiName = name;
-  channel.colorSpace = 0;
-  channel.color[0] = r;
-  channel.color[1] = g;
-  channel.color[2] = b;
-  channel.color[3] = a;
-  channel.opacity = opacity;
-  channel.mode = mode;
-
-  return index;
-}
-
-void updateChannel(ExportDocument document, int channelIndex, TypedData data) {
-  if (data is Uint8List) {
-    _updateChannelImpl<Uint8T>(document, channelIndex, data);
-  } else if (data is Uint16List) {
-    _updateChannelImpl<Uint16T>(document, channelIndex, data);
-  } else if (data is Float32List) {
-    _updateChannelImpl<Float32T>(document, channelIndex, data);
-  } else {
-    print('unsupported');
-  }
 }
 
 const _XMP_HEADER = '''<x:xmpmeta xmlns:x = "adobe:ns:meta/">
