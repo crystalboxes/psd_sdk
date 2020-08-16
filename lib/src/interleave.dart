@@ -36,6 +36,9 @@ Uint8List interleaveRGBA(Uint8List srcR, Uint8List srcG, Uint8List srcB,
 Uint8List _interleaveRGB<T extends NumDataType>(Uint8List srcR, Uint8List srcG,
     Uint8List srcB, num alpha, int width, int height,
     [int blockSize = 4]) {
+  if (srcR == null || srcG == null || srcB == null) {
+    return null;
+  }
   final r = getTypedList<T>(srcR) as List;
   final g = getTypedList<T>(srcG) as List;
   final b = getTypedList<T>(srcB) as List;
@@ -58,6 +61,9 @@ Uint8List _interleaveRGB<T extends NumDataType>(Uint8List srcR, Uint8List srcG,
 Uint8List _interleaveRGBA<T extends NumDataType>(Uint8List srcR, Uint8List srcG,
     Uint8List srcB, Uint8List srcA, int width, int height,
     [int blockSize = 4]) {
+  if (srcR == null || srcG == null || srcB == null || srcA == null) {
+    return null;
+  }
   final r = getTypedList<T>(srcR) as List;
   final g = getTypedList<T>(srcG) as List;
   final b = getTypedList<T>(srcB) as List;

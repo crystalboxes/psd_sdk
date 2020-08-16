@@ -1,3 +1,7 @@
+## 0.1.6
+
+- Added nullchecks in interleave functions.
+
 ## 0.1.5
 
 - Added documentation

@@ -1,6 +1,6 @@
 name: psd_sdk
 description: A Dart library that directly reads Photoshop PSD files. Supports limited export functionality.
-version: 0.1.5
+version: 0.1.6
 homepage: https://github.com/crystalboxes/psd_sdk
 
 environment:
